@@ -27,7 +27,12 @@ function App() {
                 <Route path="/anasayfa" element={<Anasayfa />} />
 
                 <Route path="/bimafyon/planlama" element={<Planlama />} />
-                <Route path="/bimafyon/manuelsiparis" element={<ManuelSiparis />} />
+
+                <Route
+                    path="/bimafyon/manuelsiparis"
+                    element={<ManuelSiparis onSuccess={() => { }} />}
+                />
+
                 <Route path="/bimafyon/aktifseferler" element={<AktifSeferler />} />
                 <Route path="/bimafyon/silinenseferler" element={<SilinenSeferler />} />
                 <Route path="/bimafyon/tamamlananseferler" element={<TamamlananSeferler />} />
@@ -37,6 +42,7 @@ function App() {
 
                 <Route path="/donusler/siparis" element={<DonusSiparis />} />
                 <Route path="/donusler/plakaatama" element={<DonusPlakaAtama />} />
+
                 <Route
                     path="/donusler/tamamlananseferler"
                     element={<DonusTamamlananSeferler />}
