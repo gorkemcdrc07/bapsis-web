@@ -1,0 +1,290 @@
+﻿.deleted-trips-page {
+    min-height: 100vh;
+    padding: 24px;
+    background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.10), transparent 32%), linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+.deleted-trips-card {
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 28px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.10);
+    padding: 22px;
+}
+
+.deleted-trips-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.deleted-eyebrow {
+    display: inline-flex;
+    width: fit-content;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #1d4ed8;
+    background: linear-gradient(135deg, #dbeafe, #eef2ff);
+    padding: 7px 11px;
+    border-radius: 999px;
+    margin-bottom: 9px;
+}
+
+.deleted-trips-header h2,
+.deleted-modal-header h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 26px;
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+}
+
+.deleted-trips-header p,
+.deleted-modal-header p {
+    margin: 7px 0 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.deleted-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .deleted-actions input {
+        width: 320px;
+        height: 44px;
+        border: 1px solid #dbe3ef;
+        border-radius: 16px;
+        padding: 0 15px;
+        outline: none;
+        background: #ffffff;
+        color: #0f172a;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+        transition: 0.18s ease;
+    }
+
+        .deleted-actions input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        }
+
+    .deleted-actions button,
+    .detail-btn {
+        height: 44px;
+        border: none;
+        border-radius: 16px;
+        padding: 0 16px;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #ffffff;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 12px 26px rgba(37, 99, 235, 0.24);
+        transition: 0.18s ease;
+    }
+
+        .deleted-actions button:hover,
+        .detail-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 34px rgba(37, 99, 235, 0.30);
+        }
+
+        .deleted-actions button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+.deleted-count {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 14px;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 8px 13px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+}
+
+.deleted-table-wrapper {
+    overflow: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 22px;
+    background: #ffffff;
+}
+
+.deleted-table {
+    width: 100%;
+    min-width: 1200px;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+    .deleted-table th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        text-align: left;
+        padding: 14px;
+        border-bottom: 1px solid #e2e8f0;
+        white-space: nowrap;
+    }
+
+    .deleted-table td {
+        padding: 15px 14px;
+        border-bottom: 1px solid #eef2f7;
+        color: #0f172a;
+        font-size: 14px;
+        white-space: nowrap;
+        background: #ffffff;
+    }
+
+    .deleted-table tbody tr {
+        transition: 0.15s ease;
+    }
+
+        .deleted-table tbody tr:hover td {
+            background: #f8fafc;
+        }
+
+        .deleted-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+.deleted-id {
+    display: inline-flex;
+    max-width: 170px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+    background: #f1f5f9;
+    padding: 6px 9px;
+    border-radius: 10px;
+}
+
+.detail-btn {
+    height: 34px;
+    padding: 0 13px;
+    border-radius: 12px;
+    background: #0f172a;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+}
+
+.deleted-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.52);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.deleted-modal {
+    width: min(960px, 95vw);
+    max-height: 86vh;
+    overflow: auto;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 28px;
+    padding: 24px;
+    box-shadow: 0 30px 90px rgba(15, 23, 42, 0.35);
+}
+
+.deleted-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+    .deleted-modal-header button {
+        min-width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        background: #f1f5f9;
+        color: #0f172a;
+        font-size: 24px;
+        cursor: pointer;
+        transition: 0.18s ease;
+    }
+
+        .deleted-modal-header button:hover {
+            background: #e2e8f0;
+            transform: rotate(90deg);
+        }
+
+.deleted-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+}
+
+.deleted-detail-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 13px;
+    background: linear-gradient(180deg, #ffffff, #f8fafc);
+}
+
+    .deleted-detail-item small {
+        display: block;
+        color: #64748b;
+        margin-bottom: 6px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .deleted-detail-item strong {
+        display: block;
+        color: #0f172a;
+        font-size: 14px;
+        word-break: break-word;
+    }
+
+@media (max-width: 768px) {
+    .deleted-trips-page {
+        padding: 14px;
+    }
+
+    .deleted-trips-card {
+        border-radius: 22px;
+        padding: 16px;
+    }
+
+    .deleted-trips-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .deleted-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+        .deleted-actions input,
+        .deleted-actions button {
+            width: 100%;
+        }
+}

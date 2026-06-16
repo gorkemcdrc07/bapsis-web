@@ -1,0 +1,485 @@
+﻿/* ─── Root ─────────────────────────────────────────── */
+.qro-root {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0;
+    font-family: 'DM Sans', 'Segoe UI', sans-serif;
+}
+
+/* ─── Header ────────────────────────────────────────── */
+.qro-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.qro-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.qro-icon-wrap {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.qro-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.3px;
+}
+
+.qro-subtitle {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #94a3b8;
+    margin: 2px 0 0;
+}
+
+/* ─── Buttons ───────────────────────────────────────── */
+.qro-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.qro-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+    .qro-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+.qro-btn-primary {
+    background: #0f172a;
+    color: #ffffff;
+}
+
+    .qro-btn-primary:not(:disabled):hover {
+        background: #1e293b;
+        transform: translateY(-1px);
+    }
+
+    .qro-btn-primary:not(:disabled):active {
+        transform: translateY(0);
+    }
+
+.qro-btn-ghost {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+    .qro-btn-ghost:not(:disabled):hover {
+        background: #e2e8f0;
+    }
+
+/* ─── Barcode Form ──────────────────────────────────── */
+.qro-barcode-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.qro-input-wrap {
+    position: relative;
+    flex: 1;
+}
+
+.qro-input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.qro-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 12px 0 36px;
+    border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #0f172a;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+    .qro-input::placeholder {
+        color: #cbd5e1;
+        font-weight: 500;
+    }
+
+    .qro-input:focus {
+        border-color: #0f172a;
+        background: #fff;
+    }
+
+/* ─── Detected Chips ────────────────────────────────── */
+.qro-detected-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    animation: qro-fade-up 0.25s ease;
+}
+
+.qro-detected-chip {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    min-width: 110px;
+}
+
+.qro-chip-plaka {
+    background: #eff6ff;
+    border: 1.5px solid #bfdbfe;
+}
+
+.qro-chip-irsaliye {
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+}
+
+.qro-chip-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.qro-chip-plaka .qro-chip-label {
+    color: #3b82f6;
+}
+
+.qro-chip-irsaliye .qro-chip-label {
+    color: #16a34a;
+}
+
+.qro-chip-value {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.qro-chip-plaka .qro-chip-value {
+    color: #1d4ed8;
+}
+
+.qro-chip-irsaliye .qro-chip-value {
+    color: #15803d;
+}
+
+/* ─── Message ───────────────────────────────────────── */
+.qro-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    animation: qro-fade-up 0.2s ease;
+}
+
+.qro-msg-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.qro-msg-info {
+    background: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+    .qro-msg-info .qro-msg-dot {
+        background: #0ea5e9;
+    }
+
+.qro-msg-success {
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+    .qro-msg-success .qro-msg-dot {
+        background: #22c55e;
+    }
+
+.qro-msg-warning {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+    .qro-msg-warning .qro-msg-dot {
+        background: #f59e0b;
+    }
+
+.qro-msg-error {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+    .qro-msg-error .qro-msg-dot {
+        background: #ef4444;
+    }
+
+/* ─── Camera Box ────────────────────────────────────── */
+.qro-camera-box {
+    width: 100%;
+    min-height: 60px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0f172a;
+    border: 1.5px solid #1e293b;
+    transition: min-height 0.3s ease, border-color 0.3s;
+}
+
+.qro-camera-active {
+    min-height: 300px;
+    border-color: #334155;
+}
+
+/* Html5Qrcode overrides */
+.qro-camera-box video {
+    border-radius: 14px;
+    width: 100% !important;
+}
+
+.qro-camera-box #qr-shaded-region {
+    border: none !important;
+}
+
+.qro-camera-box img[alt="Info icon"] {
+    display: none !important;
+}
+
+/* ─── Duplicate Box ─────────────────────────────────── */
+.qro-duplicate-box {
+    border-radius: 14px;
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    padding: 14px;
+    animation: qro-fade-up 0.25s ease;
+}
+
+.qro-duplicate-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #92400e;
+    margin-bottom: 10px;
+}
+
+.qro-duplicate-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.qro-duplicate-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1.5px solid #fcd34d;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+}
+
+    .qro-duplicate-btn:hover {
+        background: #fef3c7;
+        border-color: #f59e0b;
+        transform: translateX(2px);
+    }
+
+.qro-dup-sefer {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.qro-dup-no {
+    font-size: 13px;
+    font-weight: 800;
+    color: #92400e;
+}
+
+.qro-dup-plaka {
+    font-size: 11px;
+    font-weight: 600;
+    color: #b45309;
+    letter-spacing: 0.4px;
+}
+
+.qro-dup-surucu {
+    font-size: 12px;
+    font-weight: 600;
+    color: #d97706;
+}
+
+.qro-dup-arrow {
+    color: #d97706;
+    flex-shrink: 0;
+}
+
+/* ─── Success Overlay ───────────────────────────────── */
+.qro-success-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(6px);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    animation: qro-fade-in 0.2s ease;
+}
+
+.qro-success-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 32px 40px;
+    text-align: center;
+}
+
+.qro-success-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #16a34a;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: qro-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.qro-success-title {
+    font-size: 20px;
+    font-weight: 900;
+    color: #15803d;
+    margin: 0;
+    letter-spacing: -0.4px;
+}
+
+.qro-success-no {
+    font-size: 13px;
+    font-weight: 700;
+    color: #4ade80;
+    margin: 0;
+    letter-spacing: 0.5px;
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    padding: 5px 14px;
+    border-radius: 8px;
+}
+
+.qro-success-bar {
+    width: 180px;
+    height: 3px;
+    background: #dcfce7;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.qro-success-bar-fill {
+    height: 100%;
+    background: #22c55e;
+    border-radius: 99px;
+    animation: qro-bar 2.6s linear forwards;
+}
+
+/* ─── Animations ────────────────────────────────────── */
+@keyframes qro-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes qro-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes qro-pop {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes qro-bar {
+    from {
+        width: 0%;
+    }
+
+    to {
+        width: 100%;
+    }
+}

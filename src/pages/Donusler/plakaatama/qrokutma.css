@@ -1,0 +1,225 @@
+﻿.qro-root {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.qro-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.qro-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.qro-icon-wrap {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+}
+
+.qro-title {
+    font-size: 16px;
+    font-weight: 900;
+    color: #0f172a;
+    margin: 0;
+}
+
+.qro-subtitle {
+    font-size: 12px;
+    font-weight: 700;
+    color: #94a3b8;
+    margin: 2px 0 0;
+}
+
+.qro-actions,
+.qro-barcode-form {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.qro-btn {
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 800;
+    cursor: pointer;
+    border: none;
+}
+
+    .qro-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+.qro-btn-primary {
+    background: #0f172a;
+    color: #ffffff;
+}
+
+.qro-btn-ghost {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.qro-input-wrap {
+    position: relative;
+    flex: 1;
+}
+
+.qro-input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.qro-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 12px 0 36px;
+    border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0f172a;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.qro-detected-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.qro-detected-chip {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    min-width: 110px;
+}
+
+.qro-chip-plaka {
+    background: #eff6ff;
+    border: 1.5px solid #bfdbfe;
+}
+
+.qro-chip-irsaliye {
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+}
+
+.qro-chip-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.qro-chip-value {
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.qro-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 800;
+}
+
+.qro-msg-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.qro-msg-info {
+    background: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.qro-msg-success {
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.qro-msg-warning {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.qro-msg-error {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.qro-camera-box {
+    width: 100%;
+    min-height: 60px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0f172a;
+    border: 1.5px solid #1e293b;
+}
+
+.qro-camera-active {
+    min-height: 300px;
+}
+
+.qro-match-list {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 14px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+}
+
+    .qro-match-list strong {
+        color: #9a3412;
+        font-size: 13px;
+    }
+
+.qro-match-btn {
+    min-height: 42px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid #fdba74;
+    background: #ffffff;
+    color: #9a3412;
+    text-align: left;
+    cursor: pointer;
+}
+
+    .qro-match-btn b,
+    .qro-match-btn span {
+        display: block;
+    }
