@@ -47,7 +47,7 @@ export async function sayfaDrop(event, fileDragDepthRef, setIsDragActive, proces
     if (!file) return;
 
     if (!isAllowedExcelFile(file)) {
-        alert("Lütfen .xlsx, .xls veya .csv dosyasý yükleyin.");
+        alert("LÃ¼tfen .xlsx, .xls veya .csv dosyasÄ± yÃ¼kleyin.");
         return;
     }
 

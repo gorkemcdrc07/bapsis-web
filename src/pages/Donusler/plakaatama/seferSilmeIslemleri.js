@@ -13,9 +13,9 @@ export async function plakaAtamaSeferSil({
         [
             {
                 field: "kayit",
-                label: "Kayýt",
-                oldValue: `Sefer No: ${row.seferNo || "-"} / Çekici: ${row.cekici || "-"}`,
-                newValue: "Kayýt silindi",
+                label: "KayÄ±t",
+                oldValue: `Sefer No: ${row.seferNo || "-"} / Ã‡ekici: ${row.cekici || "-"}`,
+                newValue: "KayÄ±t silindi",
             },
         ],
         "Silme"
@@ -49,9 +49,9 @@ export async function eksikPlakaAtamaSeferleriSil({
             [
                 {
                     field: "kayit",
-                    label: "Kayýt",
-                    oldValue: `Sefer No: ${row.seferNo || "-"} / Çekici: ${row.cekici || "-"}`,
-                    newValue: "Excel listesinde olmadýðý için silindi",
+                    label: "KayÄ±t",
+                    oldValue: `Sefer No: ${row.seferNo || "-"} / Ã‡ekici: ${row.cekici || "-"}`,
+                    newValue: "Excel listesinde olmadÄ±ÄŸÄ± iÃ§in silindi",
                 },
             ],
             "Excel Silme"
@@ -67,5 +67,5 @@ export async function eksikPlakaAtamaSeferleriSil({
 
     setDeletedTripPrompt(null);
     await fetchRows();
-    showToast("Excel’de olmayan seferler silindi.");
+    showToast("Excelâ€™de olmayan seferler silindi.");
 }
