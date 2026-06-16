@@ -48,7 +48,7 @@ import { eksikAracKaydet } from "./plakaatama/eksikAracIslemleri";
 import { eksikPlakaAtamaSeferleriSil } from "./plakaatama/seferSilmeIslemleri";
 import { supabase } from "../../lib/supabaseClient";
 import { isTripReadyToComplete } from "./plakaatama/tamamlamaKontrol";
-import SeferTamamlamaModal from "./plakaatama/seferTamamlamaModal.jsx";
+import SeferTamamlamaModal from "./plakaatama/SeferTamamlamaModal.jsx";
 import { plakaAtamaSeferTamamla } from "./plakaatama/seferTamamlamaIslemleri";
 import {
     satirMenuKapat,
