@@ -109,7 +109,7 @@ export default function AktifSeferler() {
     const [openActionRowId, setOpenActionRowId] = useState(null);
     const [actionMenuPosition, setActionMenuPosition] = useState(null);
 
-    const [hiddenColumns, setHiddenColumns] = useState(["tc", "datalogerNo"]);
+    const [hiddenColumns, setHiddenColumns] = useState([]);
     const [importSummary, setImportSummary] = useState(null);
     const [revisionChanges, setRevisionChanges] = useState([]);
     const [changedCells, setChangedCells] = useState({});
@@ -132,11 +132,10 @@ export default function AktifSeferler() {
     const filteredRows = useMemo(() => {
         const deviceMap = new Map(
             freshlianceDevices.map((device) => [
-                String(device.device_code || "").trim(),
+                String(device.device_code || device.deviceCode || "").trim(),
                 device,
             ])
         );
-
         const TEMP_MIN = 2;
         const TEMP_MAX = 25;
         const OFFLINE_LIMIT_MIN = 10;
@@ -162,7 +161,10 @@ export default function AktifSeferler() {
 
             console.log("--------------");
             console.log("DATALOGER:", row.datalogerNo);
-            console.log("DEVICE CODE:", device?.device_code);
+            console.log(
+                "DEVICE CODE:",
+                device?.device_code || device?.deviceCode
+            );
             console.log("UPDATED_AT:", device?.updated_at);
             console.log(
                 "MINUTE DIFF:",
@@ -199,9 +201,10 @@ export default function AktifSeferler() {
                         : "",
 
                 freshlianceLocation:
-                    device.latitude && device.longitude
+                    device.locationText ||
+                    (device.latitude && device.longitude
                         ? `${device.latitude}, ${device.longitude}`
-                        : "",
+                        : ""),
 
                 freshlianceUpdatedAt: device.updated_at
                     ? new Date(device.updated_at).toLocaleString("tr-TR")
@@ -234,7 +237,6 @@ export default function AktifSeferler() {
         fetchAktifSeferler();
         fetchAraclar();
         fetchNavlunlar();
-        fetchFreshlianceDevices();
         fetchChangeLogs();
 
         const freshlianceInterval = setInterval(() => {
@@ -244,9 +246,7 @@ export default function AktifSeferler() {
         const cleanupRealtime = aktifSeferRealtimeBaslat(() => {
             fetchAktifSeferler();
             fetchChangeLogs();
-            fetchFreshlianceDevices();
         });
-
         return () => {
             clearInterval(freshlianceInterval);
             cleanupRealtime?.();
@@ -270,13 +270,19 @@ export default function AktifSeferler() {
     }, [filteredRows]);
     async function fetchAktifSeferler() {
         setLoading(true);
+
         const data = await aktifSeferleriGetir();
+
         setLoading(false);
 
         if (!data) return;
-        setRows(data);
-    }
 
+        setRows(data);
+
+        rowsRef.current = data;
+
+        await fetchFreshlianceDevices();
+    }
     async function fetchChangeLogs() {
         const logsByCell = await degisiklikleriGetir();
         if (!logsByCell) return;
@@ -294,10 +300,55 @@ export default function AktifSeferler() {
         setNavlunlar(data);
     }
     async function fetchFreshlianceDevices() {
-        const data = await freshlianceCihazlariGetir();
-        setFreshlianceDevices([...(data || [])]);
-    }
+        const activeCodes = [
+            ...new Set(
+                rowsRef.current
+                    .map((row) => String(row.datalogerNo || "").trim())
+                    .filter(Boolean)
+            ),
+        ];
 
+        const data = await freshlianceCihazlariGetir(activeCodes);
+        setFreshlianceDevices((prevDevices) => {
+            const prevMap = new Map(
+                prevDevices.map((device) => [
+                    String(device.device_code || device.deviceCode || "").trim(),
+                    device,
+                ])
+            );
+
+            return (data || []).map((device) => {
+                const code = String(
+                    device.device_code || device.deviceCode || ""
+                ).trim();
+
+                const oldDevice = prevMap.get(code);
+
+                return {
+                    ...oldDevice,
+                    ...device,
+
+                    temperature:
+                        device.temperature !== null &&
+                            device.temperature !== undefined
+                            ? device.temperature
+                            : oldDevice?.temperature ?? null,
+
+                    humidity:
+                        device.humidity !== null &&
+                            device.humidity !== undefined
+                            ? device.humidity
+                            : oldDevice?.humidity ?? null,
+
+                    probe_raw:
+                        device.probe_raw?.temperature !== null &&
+                            device.probe_raw?.temperature !== undefined
+                            ? device.probe_raw
+                            : oldDevice?.probe_raw ?? device.probe_raw,
+                };
+            });
+        });
+    }
     function findNavlunPrice(row) {
         return navlunFiyatiBul(row, navlunlarRef.current);
     }
@@ -656,20 +707,24 @@ export default function AktifSeferler() {
                     onRowClick={(row) => {
                         const device = freshlianceDevices.find(
                             (d) =>
-                                String(d.device_code || "").trim() ===
+                                String(d.device_code || d.deviceCode || "").trim() ===
                                 String(row.datalogerNo || "").trim()
                         );
-
                         console.log("ROW:", row);
                         console.log("DEVICE:", device);
 
-                        setSelectedDevice(
-                            device || {
+                        setSelectedDevice({
+                            ...(device || {
                                 latitude: 39.0,
                                 longitude: 35.0,
-                                device_code: row.datalogerNo || "UNKNOWN"
-                            }
-                        );
+                                device_code: row.datalogerNo || "UNKNOWN",
+                            }),
+
+                            freshlianceAlarm: row.freshlianceAlarm,
+                            freshlianceOffline: row.freshlianceOffline,
+                            freshlianceAlarmLevel: row.freshlianceAlarmLevel,
+                            freshlianceTemperature: row.freshlianceTemperature,
+                        });
 
                         setMapOpen(true);
                     }}
@@ -785,25 +840,25 @@ export default function AktifSeferler() {
                         </div>
 
                         {/* Özel ad / ID */}
-                        {(selectedDevice.custom_name || selectedDevice.user_device_id) && (
+                        {(selectedDevice.customName || selectedDevice.userDeviceId) && (
                             <div style={{
                                 padding: "12px 14px", borderRadius: 14,
                                 border: "1px solid #e5e7eb", background: "#f9fafb",
                                 display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8
                             }}>
-                                {selectedDevice.custom_name && (
+                                {selectedDevice.customName && (
                                     <div>
                                         <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 4 }}>Özel Ad</div>
                                         <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
-                                            {selectedDevice.custom_name}
+                                            {selectedDevice.customName}
                                         </div>
                                     </div>
                                 )}
-                                {selectedDevice.user_device_id && (
+                                {selectedDevice.userDeviceId && (
                                     <div>
                                         <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 4 }}>Cihaz ID</div>
                                         <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
-                                            #{selectedDevice.user_device_id}
+                                            #{selectedDevice.userDeviceId}
                                         </div>
                                     </div>
                                 )}

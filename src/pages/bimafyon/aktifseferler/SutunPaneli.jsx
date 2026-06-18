@@ -9,23 +9,32 @@
 }) {
     if (!showColumnPanel) return null;
 
+    const acikSutunSayisi = Math.max(visibleColumns.length - 1, 0);
+    const toplamSutunSayisi = filteredColumnList.length;
+
     return (
-        <div className="column-panel-modern" onClick={(e) => e.stopPropagation()}>
-            <div className="column-panel-top">
+        <div className="column-panel-v2" onClick={(e) => e.stopPropagation()}>
+            <div className="column-panel-top-v2">
                 <div>
                     <strong>Sütun görünürlüğü</strong>
-                    <span>{visibleColumns.length - 1} sütun açık</span>
+                    <span>
+                        {acikSutunSayisi} sütun açık / {toplamSutunSayisi} sütun
+                    </span>
+                </div>
+
+                <div className="column-panel-badge-v2">
+                    {acikSutunSayisi}
                 </div>
             </div>
 
             <input
-                className="column-search"
+                className="column-search-v2"
                 value={columnSearch}
                 onChange={(e) => setColumnSearch(e.target.value)}
                 placeholder="Sütun ara..."
             />
 
-            <div className="column-chip-grid">
+            <div className="column-grid-v2">
                 {filteredColumnList.map((column) => {
                     const visible = !hiddenColumns.includes(column.key);
 
@@ -33,12 +42,22 @@
                         <button
                             type="button"
                             key={column.key}
-                            className={visible ? "column-chip visible" : "column-chip hidden"}
+                            className={
+                                visible
+                                    ? "column-card-v2 active"
+                                    : "column-card-v2"
+                            }
                             onClick={() => toggleColumn(column.key)}
                         >
-                            <span className="column-toggle-dot" />
-                            <span>{column.label}</span>
-                            <small>{visible ? "Açık" : "Gizli"}</small>
+                            <span className="column-dot-v2" />
+
+                            <span className="column-label-v2">
+                                {column.label}
+                            </span>
+
+                            <small>
+                                {visible ? "Açık" : "Gizli"}
+                            </small>
                         </button>
                     );
                 })}

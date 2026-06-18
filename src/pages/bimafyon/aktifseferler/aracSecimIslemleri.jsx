@@ -40,12 +40,21 @@ export async function aktifSefereAracSec({
                 surucu: arac.surucu || "",
                 telefon: arac.telefon || "",
                 faturaVkn: arac.vkn || "",
+                datalogerNo: arac.datalogerNo || "",
             };
 
     const kontrolEdilecekAlanlar =
         secimTipi === "driver-change"
             ? ["tc", "surucu", "telefon", "faturaVkn"]
-            : ["cekici", "dorse", "tc", "surucu", "telefon", "faturaVkn"];
+            : [
+                "cekici",
+                "dorse",
+                "tc",
+                "surucu",
+                "telefon",
+                "faturaVkn",
+                "datalogerNo",
+            ];
 
     const changedFields = kontrolEdilecekAlanlar.filter(
         (field) =>

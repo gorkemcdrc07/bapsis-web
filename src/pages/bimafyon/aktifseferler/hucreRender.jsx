@@ -25,6 +25,40 @@
         return <span className="id-cell">#{row.id}</span>;
     }
 
+    if (column.key === "freshlianceBattery") {
+        const battery = Number(String(row.freshlianceBattery || "").replace("%", ""));
+        const cls =
+            battery < 20 ? "battery-pill danger" :
+                battery < 60 ? "battery-pill warning" :
+                    "battery-pill good";
+
+        return <span className={cls}>{row.freshlianceBattery || "-"}</span>;
+    }
+
+    if (column.key === "freshlianceLocation") {
+        return (
+            <span className="location-pill">
+                📍 {row.freshlianceLocation || "-"}
+            </span>
+        );
+    }
+
+    if (column.key === "freshlianceTemperature") {
+        return (
+            <span className={row.freshlianceAlarm ? "temp-pill danger" : "temp-pill good"}>
+                🌡️ {row.freshlianceTemperature || "-"}
+            </span>
+        );
+    }
+
+    if (column.key === "freshlianceUpdatedAt") {
+        return (
+            <span className={row.freshlianceOffline ? "status-pill offline" : "status-pill online"}>
+                {row.freshlianceOffline ? "⚫ Offline" : "🟢 Aktif"}
+            </span>
+        );
+    }
+
     if (column.key === "cekici") {
         return (
             <button className="table-select" onClick={() => setAracPanelRow(row)}>

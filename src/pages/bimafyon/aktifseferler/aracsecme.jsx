@@ -2,8 +2,8 @@
 import "./aracsecme.css";
 
 const emptySelection = {
-    type: null,
-    scope: null,
+    type: "vehicle-change",
+    scope: "row",
 };
 
 export default function AracSecme({
@@ -14,7 +14,6 @@ export default function AracSecme({
     onSelect,
 }) {
     const [search, setSearch] = useState("");
-    const [step, setStep] = useState("decision");
     const [selection, setSelection] = useState(emptySelection);
 
     const satirDoluMu = useMemo(() => {
@@ -25,7 +24,8 @@ export default function AracSecme({
             mevcutSatir.dorse ||
             mevcutSatir.surucu ||
             mevcutSatir.telefon ||
-            mevcutSatir.tc
+            mevcutSatir.tc ||
+            mevcutSatir.datalogerNo
         );
     }, [mevcutSatir]);
 
@@ -34,8 +34,7 @@ export default function AracSecme({
 
         setSearch("");
         setSelection(emptySelection);
-        setStep(satirDoluMu ? "decision" : "list");
-    }, [open, satirDoluMu]);
+    }, [open]);
 
     useEffect(() => {
         if (!open) return;
@@ -61,6 +60,7 @@ export default function AracSecme({
                 item.tc,
                 item.telefon,
                 item.vkn,
+                item.datalogerNo,
             ]
                 .filter(Boolean)
                 .join(" ")
@@ -69,245 +69,152 @@ export default function AracSecme({
         );
     }, [araclar, search]);
 
-    const handleFullVehicleChange = () => {
-        setSelection({
-            type: "vehicle-change",
-            scope: "row",
-        });
-        setStep("list");
-    };
-
-    const handleDriverChange = () => {
-        setStep("scope");
-    };
-
-    const handleScopeSelect = (scope) => {
-        setSelection({
-            type: "driver-change",
-            scope,
-        });
-        setStep("list");
-    };
-
-    const handleSelect = (arac) => {
-        onSelect?.(arac, selection);
-    };
-
-    const handleBack = () => {
-        setSearch("");
-
-        if (step === "scope") {
-            setStep("decision");
-            return;
-        }
-
-        if (step === "list" && satirDoluMu) {
-            if (selection.type === "driver-change") {
-                setStep("scope");
-            } else {
-                setStep("decision");
-            }
-
-            setSelection(emptySelection);
-        }
-    };
-
     const handleOverlayMouseDown = (event) => {
         if (event.target === event.currentTarget) {
             onClose?.();
         }
     };
 
-    const stopModalEvent = (event) => {
-        event.stopPropagation();
-    };
-
-    const title =
-        step === "decision"
-            ? "Bu satırda araç bilgisi var"
-            : step === "scope"
-                ? "Şoför değişikliği nasıl olsun?"
-                : selection.type === "driver-change"
-                    ? "Yeni şoförü seç"
-                    : "Çekici / Dorse seç";
-
-    const description =
-        step === "decision"
-            ? "Devam etmeden önce yapmak istediğin işlemi seç."
-            : step === "scope"
-                ? "Temelli değişiklik tabloya kaydedilir, sefere özel değişiklik sadece bu satırda kalır."
-                : selection.type === "driver-change"
-                    ? "Seçeceğin kayıttaki şoför, TC ve telefon bilgileri kullanılacak."
-                    : "Seçim yapınca çekici, dorse, sürücü, TC, telefon ve VKN otomatik doldurulur.";
-
     if (!open) return null;
 
     return (
-        <div className="arac-modal-overlay" onMouseDown={handleOverlayMouseDown}>
-            <div
-                className="arac-modal"
-                onMouseDown={stopModalEvent}
-                onClick={stopModalEvent}
-            >
-                <div className="arac-modal-header">
-                    <div className="arac-title-area">
-                        <span className="arac-kicker">Araç Seçimi</span>
-                        <h2>{title}</h2>
-                        <p>{description}</p>
+        <div className="modern-picker-overlay" onMouseDown={handleOverlayMouseDown}>
+            <div className="modern-picker">
+
+                {/* SOL PANEL */}
+                <aside className="modern-picker-side">
+                    <div className="modern-picker-brand">
+                        <span className="modern-badge">Panel</span>
+                        <h2>Araç Seçimi</h2>
+                        <p>Aktif sefere uygulanacak değişiklik modunu belirleyin.</p>
                     </div>
 
-                    <button type="button" className="arac-close-btn" onClick={onClose}>
-                        ×
-                    </button>
-                </div>
-
-                {satirDoluMu && (
-                    <div className="arac-current-box">
-                        <span>Mevcut satır</span>
-
-                        <div className="arac-current-grid">
-                            <strong>{mevcutSatir?.cekici || "Çekici yok"}</strong>
-                            <strong>{mevcutSatir?.dorse || "Dorse yok"}</strong>
-                            <p>{mevcutSatir?.surucu || "Sürücü yok"}</p>
-                            <p>{mevcutSatir?.telefon || "Telefon yok"}</p>
-                            <p>TC: {mevcutSatir?.tc || "—"}</p>
-                        </div>
-                    </div>
-                )}
-
-                {step === "decision" && (
-                    <div className="arac-choice-wrap">
-                        <button
-                            type="button"
-                            className="arac-choice-card"
-                            onClick={handleFullVehicleChange}
-                        >
-                            <div className="arac-choice-icon">🚛</div>
-                            <div>
-                                <strong>Komple araç değişikliği</strong>
-                                <p>Çekici, dorse, sürücü, telefon ve TC alanları değişir.</p>
+                    {satirDoluMu && (
+                        <div className="modern-current-box">
+                            <div className="modern-box-header">
+                                <span className="modern-pulse"></span>
+                                <small>Şu Anki Seçili Satır</small>
                             </div>
-                        </button>
-
-                        <button
-                            type="button"
-                            className="arac-choice-card"
-                            onClick={handleDriverChange}
-                        >
-                            <div className="arac-choice-icon">👤</div>
-                            <div>
-                                <strong>Mevcut aracı başka şoföre ver</strong>
-                                <p>Çekici ve dorse aynı kalır, sadece şoför bilgileri değişir.</p>
-                            </div>
-                        </button>
-                    </div>
-                )}
-
-                {step === "scope" && (
-                    <div className="arac-choice-wrap">
-                        <button
-                            type="button"
-                            className="arac-choice-card"
-                            onClick={() => handleScopeSelect("permanent")}
-                        >
-                            <div className="arac-choice-icon">📌</div>
-                            <div>
-                                <strong>Temelli değişiklik</strong>
-                                <p>Bu şoför değişikliği tabloya da kaydedilir.</p>
-                            </div>
-                        </button>
-
-                        <button
-                            type="button"
-                            className="arac-choice-card"
-                            onClick={() => handleScopeSelect("trip-only")}
-                        >
-                            <div className="arac-choice-icon">🧾</div>
-                            <div>
-                                <strong>Sefere özel değişiklik</strong>
-                                <p>Sadece bu satırda uygulanır, ana tabloya kaydedilmez.</p>
-                            </div>
-                        </button>
-
-                        <button type="button" className="arac-back-btn" onClick={handleBack}>
-                            Geri dön
-                        </button>
-                    </div>
-                )}
-
-                {step === "list" && (
-                    <>
-                        <div className="arac-toolbar">
-                            {satirDoluMu && (
-                                <button
-                                    type="button"
-                                    className="arac-back-mini"
-                                    onClick={handleBack}
-                                >
-                                    ← Geri
-                                </button>
-                            )}
-
-                            <div className="arac-search-wrap">
-                                <span className="arac-search-icon">⌕</span>
-                                <input
-                                    value={search}
-                                    onChange={(event) => setSearch(event.target.value)}
-                                    placeholder="Plaka, sürücü, TC, telefon veya VKN ara..."
-                                    autoFocus
-                                />
-                            </div>
-
-                            <div className="arac-count-badge">
-                                <strong>{filteredAraclar.length}</strong>
-                                <span>kayıt</span>
+                            <div className="modern-box-body">
+                                <strong>{mevcutSatir?.cekici || "Plaka Belirtilmemiş"}</strong>
+                                {mevcutSatir?.surucu && <span>👤 {mevcutSatir.surucu}</span>}
                             </div>
                         </div>
+                    )}
 
-                        <div className="arac-grid-list">
-                            {filteredAraclar.map((arac) => (
-                                <button
-                                    type="button"
-                                    key={arac.id}
-                                    className="arac-card"
-                                    onClick={() => handleSelect(arac)}
-                                >
-                                    <div className="arac-card-top">
-                                        <div className="arac-card-icon">
-                                            {(arac.cekici || "?").slice(0, 1)}
-                                        </div>
+                    <div className="modern-mode-list">
+                        <button
+                            type="button"
+                            className={`modern-mode-btn ${selection.type === "vehicle-change" ? "active" : ""}`}
+                            onClick={() => setSelection({ type: "vehicle-change", scope: "row" })}
+                        >
+                            <span className="mode-emoji">🚛</span>
+                            <div className="mode-details">
+                                <b>Komple Değişim</b>
+                                <p>Tüm araç ve sürücü verileri sıfırlanıp yenilenir.</p>
+                            </div>
+                            <span className="mode-check">✓</span>
+                        </button>
 
-                                        <div className="arac-plates">
-                                            <strong>{arac.cekici || "Çekici yok"}</strong>
-                                            <span>{arac.dorse || "Dorse yok"}</span>
-                                        </div>
+                        <button
+                            type="button"
+                            className={`modern-mode-btn ${selection.type === "driver-change" && selection.scope === "trip-only" ? "active" : ""}`}
+                            onClick={() => setSelection({ type: "driver-change", scope: "trip-only" })}
+                        >
+                            <span className="mode-emoji">👤</span>
+                            <div className="mode-details">
+                                <b>Geçici Şoför</b>
+                                <p>Sadece bu tura özel şoför atanır, araç kartı korunur.</p>
+                            </div>
+                            <span className="mode-check">✓</span>
+                        </button>
 
-                                        <div className="arac-select-pill">Seç</div>
-                                    </div>
+                        <button
+                            type="button"
+                            className={`modern-mode-btn ${selection.type === "driver-change" && selection.scope === "permanent" ? "active" : ""}`}
+                            onClick={() => setSelection({ type: "driver-change", scope: "permanent" })}
+                        >
+                            <span className="mode-emoji">📌</span>
+                            <div className="mode-details">
+                                <b>Kalıcı Şoför</b>
+                                <p>Değişiklik sistemdeki ana araç kartına kalıcı işlenir.</p>
+                            </div>
+                            <span className="mode-check">✓</span>
+                        </button>
+                    </div>
+                </aside>
 
-                                    <div className="arac-driver">
-                                        <span>Sürücü</span>
-                                        <strong>{arac.surucu || "Sürücü yok"}</strong>
-                                    </div>
+                {/* SAĞ PANEL */}
+                <section className="modern-picker-main">
+                    <div className="modern-picker-header">
+                        <div>
+                            <h3>Uygun Araç Listesi</h3>
+                            <p className="modern-counter">
+                                Arama kriterlerine uyan <span>{filteredAraclar.length}</span> araç var
+                            </p>
+                        </div>
+                        <button type="button" className="modern-close-btn" onClick={onClose} aria-label="Kapat">
+                            ✕
+                        </button>
+                    </div>
 
-                                    <div className="arac-meta">
-                                        <span>📞 {arac.telefon || "—"}</span>
-                                        <span>TC: {arac.tc || "—"}</span>
-                                        <span>VKN: {arac.vkn || "—"}</span>
-                                    </div>
-                                </button>
-                            ))}
+                    <div className="modern-search-wrapper">
+                        <div className="modern-search-box">
+                            <span className="modern-search-icon">✨</span>
+                            <input
+                                value={search}
+                                onChange={(event) => setSearch(event.target.value)}
+                                placeholder="Plaka, isim, telefon veya cihaz no yazın..."
+                                autoFocus
+                            />
+                        </div>
+                    </div>
 
-                            {filteredAraclar.length === 0 && (
-                                <div className="arac-empty">
-                                    <div>🚛</div>
-                                    <strong>Kayıt bulunamadı</strong>
-                                    <p>Arama kelimesini değiştirerek tekrar deneyin.</p>
+                    {/* SCROLL EDİLEBİLİR ALAN */}
+                    <div className="modern-list-container">
+                        {filteredAraclar.map((arac) => (
+                            <div key={arac.id} className="modern-vehicle-card">
+                                <div className="modern-plate-tag">
+                                    <span className="plate-tr">TR</span>
+                                    <strong>{arac.cekici || "—"}</strong>
+                                    <small>{arac.dorse || "Dorse Yok"}</small>
                                 </div>
-                            )}
-                        </div>
-                    </>
-                )}
+
+                                <div className="modern-driver-info">
+                                    <h4>{arac.surucu || "Sürücü Atanmamış"}</h4>
+                                    <p>📱 {arac.telefon || "Telefon numarası yok"}</p>
+                                </div>
+
+                                <div className="modern-badges-group">
+                                    {arac.tc && <span className="pastel-badge text-purple">🆔 {arac.tc}</span>}
+                                    {arac.datalogerNo ? (
+                                        <span className="pastel-badge text-green">📡 {arac.datalogerNo}</span>
+                                    ) : (
+                                        <span className="pastel-badge text-rose">📡 Cihaz Yok</span>
+                                    )}
+                                </div>
+
+                                <div className="modern-action-area">
+                                    <button
+                                        type="button"
+                                        className="modern-select-btn"
+                                        onClick={() => onSelect?.(arac, selection)}
+                                    >
+                                        Seç
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+
+                        {filteredAraclar.length === 0 && (
+                            <div className="modern-empty-state">
+                                <div className="modern-empty-illustration">🍃</div>
+                                <h3>Sonuç Bulunamadı</h3>
+                                <p>Farklı anahtar kelimelerle veya plakayla aramayı deneyebilirsiniz.</p>
+                            </div>
+                        )}
+                    </div>
+                </section>
             </div>
         </div>
     );

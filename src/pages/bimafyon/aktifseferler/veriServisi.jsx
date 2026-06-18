@@ -105,24 +105,48 @@ export async function navlunlariGetir() {
     if (error) return [];
     return data || [];
 }
-export async function freshlianceCihazlariGetir() {
+export async function freshlianceCihazlariGetir(codes = []) {
     try {
-        const response = await fetch("http://localhost:4001/freshliance/devices");
+        const query = codes.length
+            ? `?codes=${encodeURIComponent(codes.join(","))}`
+            : "";
+
+        const response = await fetch(
+            `http://localhost:4001/freshliance/devices${query}`
+        );
+
         const data = await response.json();
 
         console.log("FRESHLIANCE LIVE DEVICES:", data);
 
-        const rows = data?.result?.data?.rows || [];
+        const rows =
+            data?.result?.data?.rows ||
+            data?.data?.rows ||
+            [];
+
+        console.log("FRESHLIANCE ROWS:", rows);
 
         return rows.map((device) => ({
             device_code: device.deviceCode,
             deviceCode: device.deviceCode,
+
             updated_at: device.batteryTime
                 ? new Date(device.batteryTime).toISOString()
-                : new Date().toISOString(),
-            latitude: device.latitude,
-            longitude: device.longitude,
-            battery: device.battery,
+                : null,
+
+            latitude: device.latitude ?? null,
+            longitude: device.longitude ?? null,
+            locationText: device.locationText ?? null,
+            battery: device.battery ?? null,
+
+            temperature: device.temperature ?? null,
+            humidity: device.humidity ?? null,
+
+            probe_raw: device.probe_raw || {
+                temperature: device.temperature ?? null,
+                humidity: device.humidity ?? null,
+            },
+
             userDeviceTripId: device.userDeviceTripId,
             customName: device.customName,
             raw: device,

@@ -1,465 +1,557 @@
-﻿.arac-modal-overlay {
+﻿/* Premium Pastel Renk Evreni */
+:root {
+    --p-indigo: #6366f1;
+    --p-violet: #4f46e5;
+    --p-soft-bg: #f8fafc;
+    /* Tatlı Pastel Tonları */
+    --pastel-purple: #f3e8ff;
+    --pastel-purple-text: #6b21a8;
+    --pastel-green: #dcfce7;
+    --pastel-green-text: #166534;
+    --pastel-rose: #ffe4e6;
+    --pastel-rose-text: #9f1239;
+    --font-smooth: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.modern-picker-overlay {
     position: fixed;
     inset: 0;
-    z-index: 9999;
+    z-index: 999999;
     display: grid;
     place-items: center;
     padding: 24px;
-    background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.22), transparent 34%), radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.18), transparent 32%), rgba(2, 6, 23, 0.62);
-    backdrop-filter: blur(14px);
+    background: rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(20px);
+    font-family: var(--font-smooth);
+    animation: modernFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.arac-modal {
-    width: min(1080px, 96vw);
-    max-height: 90vh;
-    overflow: hidden;
-    border-radius: 30px;
+.modern-picker {
+    width: min(1160px, 95vw);
+    height: min(780px, 90vh);
+    display: grid;
+    grid-template-columns: 350px 1fr;
     background: #ffffff;
-    box-shadow: 0 34px 100px rgba(2, 6, 23, 0.42);
-    animation: aracModalIn 0.22s ease-out;
+    border-radius: 32px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px -15px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(15, 23, 42, 0.05);
 }
 
-@keyframes aracModalIn {
+/* SOL PANEL */
+.modern-picker-side {
+    padding: 32px 24px;
+    background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox scrollbar gizleme */
+}
+
+    .modern-picker-side::-webkit-scrollbar {
+        display: none; /* Chrome/Safari scrollbar gizleme */
+    }
+
+.modern-badge {
+    display: inline-flex;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.3), rgba(217, 70, 239, 0.3));
+    color: #e0e7ff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modern-picker-brand h2 {
+    margin: 16px 0 6px;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(to right, #ffffff, #e2e8f0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.modern-picker-brand p {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.modern-current-box {
+    padding: 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.modern-box-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.modern-pulse {
+    width: 8px;
+    height: 8px;
+    background: #34d399;
+    border-radius: 50%;
+    animation: pulseGlow 2s infinite;
+}
+
+.modern-current-box small {
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.modern-current-box .modern-box-body strong {
+    display: block;
+    font-size: 16px;
+    color: #ffffff;
+}
+
+.modern-current-box .modern-box-body span {
+    display: block;
+    font-size: 12px;
+    color: #cbd5e1;
+    margin-top: 2px;
+}
+
+.modern-mode-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modern-mode-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.03);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+    .modern-mode-btn .mode-emoji {
+        font-size: 20px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 8px;
+        border-radius: 14px;
+        transition: transform 0.25s;
+    }
+
+    .modern-mode-btn .mode-details b {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .modern-mode-btn .mode-details p {
+        margin: 2px 0 0;
+        font-size: 11.5px;
+        color: #94a3b8;
+        line-height: 1.4;
+    }
+
+    .modern-mode-btn .mode-check {
+        position: absolute;
+        right: 16px;
+        opacity: 0;
+        transform: scale(0.5);
+        color: var(--p-indigo);
+        font-weight: bold;
+        transition: all 0.2s;
+    }
+
+    .modern-mode-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+        .modern-mode-btn:hover .mode-emoji {
+            transform: scale(1.1);
+        }
+
+    .modern-mode-btn.active {
+        background: #ffffff;
+        color: #1e1b4b;
+        border-color: #ffffff;
+        box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.2);
+    }
+
+        .modern-mode-btn.active .mode-details p {
+            color: #64748b;
+        }
+
+        .modern-mode-btn.active .mode-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+/* SAĞ PANEL */
+.modern-picker-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--p-soft-bg);
+    height: 100%; /* İçerik yüksekliğini dış kutuya kitler */
+    overflow: hidden;
+}
+
+.modern-picker-header {
+    padding: 28px 36px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+}
+
+    .modern-picker-header h3 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+        color: #1e293b;
+        letter-spacing: -0.3px;
+    }
+
+.modern-counter {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+    .modern-counter span {
+        color: var(--p-indigo);
+        font-weight: 700;
+    }
+
+.modern-close-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+    .modern-close-btn:hover {
+        background: #ffe4e6;
+        color: #f43f5e;
+        transform: rotate(90deg);
+    }
+
+.modern-search-wrapper {
+    padding: 0 36px 24px;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.modern-search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.modern-search-icon {
+    position: absolute;
+    left: 18px;
+    font-size: 16px;
+}
+
+.modern-search-box input {
+    width: 100%;
+    height: 52px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #f8fafc;
+    padding: 0 20px 0 48px;
+    outline: none;
+    font-size: 14px;
+    color: #1e293b;
+    transition: all 0.25s;
+}
+
+    .modern-search-box input:focus {
+        background: #ffffff;
+        border-color: var(--p-indigo);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+    }
+
+/* 🎯 GELİŞTİRİLMİŞ SCROLL ALANI */
+.modern-list-container {
+    flex: 1; /* Kalan dikey alanın tamamını kaplar */
+    overflow-y: auto; /* Dikeyde taşma olduğunda scrollbar çıkarır */
+    padding: 24px 36px 36px;
+    display: grid;
+    grid-template-columns: 1fr;
+    auto-rows: max-content; /* Kart yüksekliklerinin bozulmasını engeller */
+    gap: 14px;
+    /* İnce, tatlı modern kaydırma çubuğu stilleri */
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+    /* Chrome, Edge ve Safari için özel kaydırma çubuğu tasarımı */
+    .modern-list-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .modern-list-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .modern-list-container::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 20px;
+        border: transparent;
+    }
+
+        .modern-list-container::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+/* Kart Tasarımı */
+.modern-vehicle-card {
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 20px;
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: 150px 1.2fr 1fr auto;
+    gap: 24px;
+    align-items: center;
+    transition: all 0.25s ease;
+}
+
+    .modern-vehicle-card:hover {
+        border-color: transparent;
+        box-shadow: 0 12px 24px -8px rgba(99, 102, 241, 0.15);
+        transform: translateY(-2px);
+    }
+
+/* Plaka Tasarımı */
+.modern-plate-tag {
+    position: relative;
+    padding: 10px;
+    background: #ffffff;
+    border: 2px solid #1e293b;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 2px 2px 0px #1e293b;
+}
+
+.plate-tr {
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 8px;
+    font-weight: 900;
+    background: #0033cc;
+    color: white;
+    padding: 2px 1px;
+    border-radius: 2px;
+}
+
+.modern-plate-tag strong {
+    display: block;
+    font-size: 15px;
+    color: #1e293b;
+    letter-spacing: 0.5px;
+    padding-left: 8px;
+}
+
+.modern-plate-tag small {
+    display: block;
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+/* Sürücü Bilgileri */
+.modern-driver-info h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.modern-driver-info p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Rozetler */
+.modern-badges-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.pastel-badge {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+    .pastel-badge.text-purple {
+        background: var(--pastel-purple);
+        color: var(--pastel-purple-text);
+    }
+
+    .pastel-badge.text-green {
+        background: var(--pastel-green);
+        color: var(--pastel-green-text);
+    }
+
+    .pastel-badge.text-rose {
+        background: var(--pastel-rose);
+        color: var(--pastel-rose-text);
+    }
+
+/* Seç Butonu */
+.modern-select-btn {
+    padding: 10px 24px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--p-indigo) 0%, var(--p-violet) 100%);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    transition: all 0.2s;
+}
+
+    .modern-select-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+        opacity: 0.95;
+    }
+
+/* Boş Durum */
+.modern-empty-state {
+    padding: 60px 24px;
+    text-align: center;
+}
+
+.modern-empty-illustration {
+    font-size: 44px;
+    margin-bottom: 12px;
+    animation: floatAnim 3s ease-in-out infinite;
+}
+
+.modern-empty-state h3 {
+    margin: 0;
+    font-size: 17px;
+    color: #334155;
+}
+
+.modern-empty-state p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* Animasyonlar */
+@keyframes modernFadeIn {
     from {
         opacity: 0;
-        transform: translateY(14px) scale(0.98);
+        transform: scale(0.98);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: scale(1);
     }
 }
 
-.arac-modal-header {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 30px 32px 22px;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.04), rgba(59, 130, 246, 0.08)), #ffffff;
-}
-
-.arac-title-area {
-    min-width: 0;
-}
-
-.arac-kicker {
-    display: inline-flex;
-    padding: 7px 12px;
-    border-radius: 999px;
-    background: #eff6ff;
-    color: #2563eb;
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.arac-modal-header h2 {
-    margin: 13px 0 7px;
-    color: #020617;
-    font-size: clamp(24px, 3vw, 34px);
-    line-height: 1.05;
-    letter-spacing: -0.04em;
-}
-
-.arac-modal-header p {
-    margin: 0;
-    color: #64748b;
-    font-size: 14px;
-}
-
-.arac-close-btn {
-    width: 44px;
-    height: 44px;
-    border: 0;
-    border-radius: 16px;
-    background: #f8fafc;
-    color: #0f172a;
-    font-size: 30px;
-    cursor: pointer;
-    box-shadow: inset 0 0 0 1px #e2e8f0;
-    transition: 0.18s ease;
-}
-
-    .arac-close-btn:hover {
-        background: #0f172a;
-        color: #ffffff;
-        transform: rotate(90deg);
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5);
     }
 
-.arac-current-box {
-    margin: 0 32px 18px;
-    padding: 16px;
-    border-radius: 22px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-}
-
-    .arac-current-box > span {
-        display: block;
-        margin-bottom: 10px;
-        color: #64748b;
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
+    70% {
+        box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
     }
 
-.arac-current-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    100% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+    }
 }
 
-    .arac-current-grid strong,
-    .arac-current-grid p {
-        margin: 0;
-        padding: 8px 11px;
-        border-radius: 999px;
-        background: #ffffff;
-        color: #334155;
-        font-size: 12px;
-        font-weight: 850;
-        border: 1px solid #e2e8f0;
+@keyframes floatAnim {
+    0%, 100% {
+        transform: translateY(0);
     }
 
-.arac-choice-wrap {
-    padding: 4px 32px 32px;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-}
-
-.arac-choice-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    min-height: 140px;
-    padding: 22px;
-    border: 1px solid #e2e8f0;
-    border-radius: 26px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    text-align: left;
-    cursor: pointer;
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
-    transition: 0.2s ease;
-}
-
-    .arac-choice-card:hover {
-        transform: translateY(-3px);
-        border-color: #93c5fd;
-        box-shadow: 0 22px 48px rgba(37, 99, 235, 0.16);
+    50% {
+        transform: translateY(-8px);
     }
-
-.arac-choice-icon {
-    width: 54px;
-    height: 54px;
-    flex: 0 0 auto;
-    display: grid;
-    place-items: center;
-    border-radius: 19px;
-    background: #eff6ff;
-    font-size: 26px;
 }
 
-.arac-choice-card strong {
-    display: block;
-    color: #020617;
-    font-size: 18px;
-    font-weight: 950;
-}
-
-.arac-choice-card p {
-    margin: 8px 0 0;
-    color: #64748b;
-    font-size: 14px;
-    line-height: 1.45;
-}
-
-.arac-back-btn {
-    grid-column: 1 / -1;
-    height: 48px;
-    border: 0;
-    border-radius: 16px;
-    background: #f1f5f9;
-    color: #334155;
-    font-size: 14px;
-    font-weight: 900;
-    cursor: pointer;
-}
-
-.arac-toolbar {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 14px;
-    padding: 0 32px 18px;
-    background: #ffffff;
-}
-
-.arac-back-mini {
-    height: 56px;
-    padding: 0 16px;
-    border: 0;
-    border-radius: 18px;
-    background: #f1f5f9;
-    color: #334155;
-    font-weight: 900;
-    cursor: pointer;
-}
-
-.arac-search-wrap {
-    height: 56px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 18px;
-    border-radius: 18px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    transition: 0.18s ease;
-}
-
-    .arac-search-wrap:focus-within {
-        background: #ffffff;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
-    }
-
-.arac-search-icon {
-    color: #64748b;
-    font-size: 24px;
-    font-weight: 800;
-}
-
-.arac-search-wrap input {
-    width: 100%;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: #020617;
-    font-size: 15px;
-}
-
-.arac-count-badge {
-    min-width: 92px;
-    height: 56px;
-    display: grid;
-    place-items: center;
-    padding: 0 16px;
-    border-radius: 18px;
-    background: #0f172a;
-    color: #cbd5e1;
-}
-
-    .arac-count-badge strong {
-        color: #ffffff;
-        font-size: 18px;
-        line-height: 1;
-    }
-
-    .arac-count-badge span {
-        margin-top: -7px;
-        font-size: 11px;
-        font-weight: 800;
-    }
-
-.arac-grid-list {
-    max-height: 58vh;
-    overflow-y: auto;
-    padding: 6px 32px 32px;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    background: #ffffff;
-}
-
-.arac-card {
-    width: 100%;
-    padding: 18px;
-    border: 1px solid #e2e8f0;
-    border-radius: 24px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    text-align: left;
-    cursor: pointer;
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
-    transition: 0.2s ease;
-}
-
-    .arac-card:hover {
-        transform: translateY(-3px);
-        border-color: #93c5fd;
-        box-shadow: 0 22px 48px rgba(37, 99, 235, 0.16);
-    }
-
-.arac-card-top {
-    display: grid;
-    grid-template-columns: 52px 1fr auto;
-    align-items: center;
-    gap: 13px;
-}
-
-.arac-card-icon {
-    width: 52px;
-    height: 52px;
-    display: grid;
-    place-items: center;
-    border-radius: 18px;
-    background: linear-gradient(135deg, #2563eb, #06b6d4);
-    color: #ffffff;
-    font-size: 20px;
-    font-weight: 950;
-}
-
-.arac-plates {
-    min-width: 0;
-    display: grid;
-    gap: 3px;
-}
-
-    .arac-plates strong {
-        overflow: hidden;
-        color: #020617;
-        font-size: 17px;
-        font-weight: 950;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .arac-plates span {
-        overflow: hidden;
-        color: #64748b;
-        font-size: 13px;
-        font-weight: 800;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-.arac-select-pill {
-    padding: 9px 13px;
-    border-radius: 999px;
-    background: #dcfce7;
-    color: #15803d;
-    font-size: 12px;
-    font-weight: 950;
-}
-
-.arac-driver {
-    margin-top: 16px;
-    display: grid;
-    gap: 4px;
-}
-
-    .arac-driver span {
-        color: #94a3b8;
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-    }
-
-    .arac-driver strong {
-        color: #334155;
-        font-size: 14px;
-        font-weight: 900;
-    }
-
-.arac-meta {
-    margin-top: 14px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-}
-
-    .arac-meta span {
-        padding: 7px 10px;
-        border-radius: 999px;
-        background: #f1f5f9;
-        color: #475569;
-        font-size: 11px;
-        font-weight: 850;
-    }
-
-.arac-empty {
-    grid-column: 1 / -1;
-    padding: 56px 20px;
-    border-radius: 26px;
-    background: #f8fafc;
-    text-align: center;
-    color: #64748b;
-    border: 1px dashed #cbd5e1;
-}
-
-    .arac-empty div {
-        font-size: 44px;
-        margin-bottom: 12px;
-    }
-
-    .arac-empty strong {
-        display: block;
-        color: #0f172a;
-        font-size: 19px;
-    }
-
-    .arac-empty p {
-        margin: 7px 0 0;
-    }
-
-@media (max-width: 820px) {
-    .arac-modal-overlay {
-        padding: 12px;
-    }
-
-    .arac-modal {
-        width: 100%;
-        max-height: 93vh;
-        border-radius: 24px;
-    }
-
-    .arac-modal-header {
-        padding: 24px 22px 18px;
-    }
-
-    .arac-current-box {
-        margin: 0 22px 16px;
-    }
-
-    .arac-choice-wrap {
+/* RESPONSIVE DÜZENLER */
+@media (max-width: 1024px) {
+    .modern-picker {
         grid-template-columns: 1fr;
-        padding: 4px 22px 22px;
+        height: 94vh;
     }
 
-    .arac-toolbar {
-        grid-template-columns: 1fr;
-        padding: 0 22px 16px;
+    .modern-picker-side {
+        max-height: 240px;
     }
 
-    .arac-back-mini {
-        height: 44px;
+    .modern-vehicle-card {
+        grid-template-columns: 140px 1fr auto;
     }
 
-    .arac-count-badge {
-        height: 44px;
-        display: flex;
-        justify-content: center;
-        gap: 6px;
-    }
-
-        .arac-count-badge span {
-            margin-top: 0;
-        }
-
-    .arac-grid-list {
-        grid-template-columns: 1fr;
-        max-height: 58vh;
-        padding: 4px 22px 22px;
-    }
-
-    .arac-card-top {
-        grid-template-columns: 48px 1fr;
-    }
-
-    .arac-select-pill {
+    .modern-badges-group {
         display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .modern-vehicle-card {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .modern-plate-tag {
+        max-width: 160px;
+        margin: 0 auto;
+    }
+
+    .modern-select-btn {
+        width: 100%;
+    }
+
+    .modern-picker-header, .modern-search-wrapper, .modern-list-container {
+        padding-left: 20px;
+        padding-right: 20px;
     }
 }
