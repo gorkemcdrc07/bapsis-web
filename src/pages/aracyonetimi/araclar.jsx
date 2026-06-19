@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "../../lib/supabaseClient";
-import "./Araclar.css";
+import "./araclar.css";
 
 const emptyForm = {
     cekici: "",
