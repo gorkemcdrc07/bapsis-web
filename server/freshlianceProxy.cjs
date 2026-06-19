@@ -1,7 +1,5 @@
 require("dotenv").config();
 
-const fs = require("fs");
-const path = require("path");
 const https = require("https");
 const express = require("express");
 const axios = require("axios");
@@ -14,20 +12,21 @@ app.use(cors());
 app.use(express.json());
 
 const APP_ID = process.env.FRESHLIANCE_APP_ID;
-const PRIVATE_KEY_PATH = path.resolve(
-    process.cwd(),
-    process.env.FRESHLIANCE_PRIVATE_KEY_PATH || "server/freshliance_pkcs8.pem"
-);
+
+let PRIVATE_KEY = process.env.FRESHLIANCE_PRIVATE_KEY;
+
+if (PRIVATE_KEY) {
+    PRIVATE_KEY = PRIVATE_KEY.replace(/\\n/g, "\n");
+}
 
 if (!APP_ID) {
-    throw new Error("FRESHLIANCE_APP_ID .env içinde tanýmlý deðil.");
+    throw new Error("FRESHLIANCE_APP_ID environment variable tanýmlý deðil.");
 }
 
-if (!fs.existsSync(PRIVATE_KEY_PATH)) {
-    throw new Error(`Private key dosyasý bulunamadý: ${PRIVATE_KEY_PATH}`);
+if (!PRIVATE_KEY) {
+    throw new Error("FRESHLIANCE_PRIVATE_KEY environment variable tanýmlý deðil.");
 }
 
-const PRIVATE_KEY = fs.readFileSync(PRIVATE_KEY_PATH, "utf8");
 const API_URL = "https://api.freshliance.com/api";
 
 const locationCache = new Map();
@@ -296,7 +295,6 @@ app.get("/health", (req, res) => {
     res.json({
         ok: true,
         message: "Freshliance proxy çalýþýyor",
-        privateKeyPath: PRIVATE_KEY_PATH,
     });
 });
 
@@ -304,5 +302,4 @@ const PORT = process.env.PORT || 4001;
 
 app.listen(PORT, () => {
     console.log(`Freshliance proxy running on http://localhost:${PORT}`);
-    console.log(`Private key path: ${PRIVATE_KEY_PATH}`);
 });
