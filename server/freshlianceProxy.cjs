@@ -12,11 +12,19 @@ app.use(cors());
 app.use(express.json());
 
 const APP_ID = process.env.FRESHLIANCE_APP_ID;
-
 let PRIVATE_KEY = process.env.FRESHLIANCE_PRIVATE_KEY;
 
 if (PRIVATE_KEY) {
-    PRIVATE_KEY = PRIVATE_KEY.replace(/\\n/g, "\n");
+    PRIVATE_KEY = PRIVATE_KEY.replace(/\\n/g, "\n").trim();
+
+    if (
+        PRIVATE_KEY.includes("-----BEGIN PRIVATE KEY-----") &&
+        PRIVATE_KEY.includes("MIIEoQIBAAKCA")
+    ) {
+        PRIVATE_KEY = PRIVATE_KEY
+            .replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN RSA PRIVATE KEY-----")
+            .replace("-----END PRIVATE KEY-----", "-----END RSA PRIVATE KEY-----");
+    }
 }
 
 if (!APP_ID) {
@@ -28,7 +36,6 @@ if (!PRIVATE_KEY) {
 }
 
 const API_URL = "https://api.freshliance.com/api";
-
 const locationCache = new Map();
 
 function buildSignText(params) {
@@ -283,6 +290,8 @@ app.get("/freshliance/devices", async (req, res) => {
             },
         });
     } catch (error) {
+        console.error("FRESHLIANCE ERROR:", error.message);
+
         res.status(500).json({
             ok: false,
             error: error.message,
