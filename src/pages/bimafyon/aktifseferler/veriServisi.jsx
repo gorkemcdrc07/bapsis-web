@@ -1,6 +1,9 @@
 ﻿import { supabase } from "../../../lib/supabaseClient";
 import { getAktifKullanici, mapDbRow } from "./helpers";
 
+const FRESHLIANCE_PROXY_URL =
+    import.meta.env.VITE_FRESHLIANCE_PROXY_URL || "http://localhost:4001";
+
 export async function aktifSeferleriGetir() {
     const { data, error } = await supabase
         .from("aktif_seferler")
@@ -114,6 +117,7 @@ export async function ugramaSartlariGetir() {
     if (error) return [];
     return data || [];
 }
+
 export async function freshlianceCihazlariGetir(codes = []) {
     try {
         const query = codes.length
@@ -121,17 +125,14 @@ export async function freshlianceCihazlariGetir(codes = []) {
             : "";
 
         const response = await fetch(
-            `http://localhost:4001/freshliance/devices${query}`
+            `${FRESHLIANCE_PROXY_URL}/freshliance/devices${query}`
         );
 
         const data = await response.json();
 
         console.log("FRESHLIANCE LIVE DEVICES:", data);
 
-        const rows =
-            data?.result?.data?.rows ||
-            data?.data?.rows ||
-            [];
+        const rows = data?.result?.data?.rows || data?.data?.rows || [];
 
         console.log("FRESHLIANCE ROWS:", rows);
 
