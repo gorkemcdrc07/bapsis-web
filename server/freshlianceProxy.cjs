@@ -14,18 +14,27 @@ app.use(express.json());
 const APP_ID = process.env.FRESHLIANCE_APP_ID;
 let PRIVATE_KEY = process.env.FRESHLIANCE_PRIVATE_KEY;
 
-if (PRIVATE_KEY) {
-    PRIVATE_KEY = PRIVATE_KEY.replace(/\\n/g, "\n").trim();
+function normalizePrivateKey(key) {
+    if (!key) return "";
 
-    if (
-        PRIVATE_KEY.includes("-----BEGIN PRIVATE KEY-----") &&
-        PRIVATE_KEY.includes("MIIEoQIBAAKCA")
-    ) {
-        PRIVATE_KEY = PRIVATE_KEY
-            .replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN RSA PRIVATE KEY-----")
-            .replace("-----END PRIVATE KEY-----", "-----END RSA PRIVATE KEY-----");
-    }
+    let clean = String(key)
+        .replace(/\\n/g, "\n")
+        .replace(/\r/g, "")
+        .trim();
+
+    clean = clean
+        .replace("-----BEGIN PRIVATE KEY-----", "")
+        .replace("-----END PRIVATE KEY-----", "")
+        .replace("-----BEGIN RSA PRIVATE KEY-----", "")
+        .replace("-----END RSA PRIVATE KEY-----", "")
+        .replace(/\s+/g, "");
+
+    const lines = clean.match(/.{1,64}/g)?.join("\n") || clean;
+
+    return `-----BEGIN RSA PRIVATE KEY-----\n${lines}\n-----END RSA PRIVATE KEY-----`;
 }
+
+PRIVATE_KEY = normalizePrivateKey(PRIVATE_KEY);
 
 if (!APP_ID) {
     throw new Error("FRESHLIANCE_APP_ID environment variable tanýmlý deðil.");
@@ -49,8 +58,14 @@ function buildSignText(params) {
 function createSign(params) {
     const signText = buildSignText(params);
 
+    const privateKeyObject = crypto.createPrivateKey({
+        key: PRIVATE_KEY,
+        format: "pem",
+        type: "pkcs1",
+    });
+
     return crypto
-        .sign("RSA-SHA256", Buffer.from(signText), PRIVATE_KEY)
+        .sign("RSA-SHA256", Buffer.from(signText), privateKeyObject)
         .toString("base64");
 }
 
