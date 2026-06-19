@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const fs = require("fs");
+const path = require("path");
 const https = require("https");
 const express = require("express");
 const axios = require("axios");
@@ -13,7 +14,20 @@ app.use(cors());
 app.use(express.json());
 
 const APP_ID = process.env.FRESHLIANCE_APP_ID;
-const PRIVATE_KEY = fs.readFileSync("../freshliance_pkcs8.pem", "utf8");
+const PRIVATE_KEY_PATH = path.resolve(
+    process.cwd(),
+    process.env.FRESHLIANCE_PRIVATE_KEY_PATH || "server/freshliance_pkcs8.pem"
+);
+
+if (!APP_ID) {
+    throw new Error("FRESHLIANCE_APP_ID .env içinde tanýmlý deðil.");
+}
+
+if (!fs.existsSync(PRIVATE_KEY_PATH)) {
+    throw new Error(`Private key dosyasý bulunamadý: ${PRIVATE_KEY_PATH}`);
+}
+
+const PRIVATE_KEY = fs.readFileSync(PRIVATE_KEY_PATH, "utf8");
 const API_URL = "https://api.freshliance.com/api";
 
 const locationCache = new Map();
@@ -100,7 +114,8 @@ async function getAllDevices() {
 
         if (result?.code !== "0") {
             throw new Error(
-                `Freshliance cihaz listesi alýnamadý: ${result?.subMsg || result?.msg}`
+                `Freshliance cihaz listesi alýnamadý: ${result?.subMsg || result?.msg || "Bilinmeyen hata"
+                }`
             );
         }
 
@@ -133,12 +148,7 @@ function extractTemperature(probe) {
 function extractHumidity(probe) {
     if (!probe) return null;
 
-    return (
-        probe.humidity ??
-        probe.hum ??
-        probe.humidityValue ??
-        null
-    );
+    return probe.humidity ?? probe.hum ?? probe.humidityValue ?? null;
 }
 
 function getLocationCacheKey(latitude, longitude) {
@@ -155,20 +165,23 @@ async function reverseGeocode(latitude, longitude) {
     }
 
     try {
-        const response = await axios.get("https://nominatim.openstreetmap.org/reverse", {
-            params: {
-                format: "jsonv2",
-                lat: latitude,
-                lon: longitude,
-                zoom: 10,
-                addressdetails: 1,
-                "accept-language": "tr",
-            },
-            headers: {
-                "User-Agent": "bapsis-freshliance-proxy/1.0",
-            },
-            timeout: 10000,
-        });
+        const response = await axios.get(
+            "https://nominatim.openstreetmap.org/reverse",
+            {
+                params: {
+                    format: "jsonv2",
+                    lat: latitude,
+                    lon: longitude,
+                    zoom: 10,
+                    addressdetails: 1,
+                    "accept-language": "tr",
+                },
+                headers: {
+                    "User-Agent": "bapsis-freshliance-proxy/1.0",
+                },
+                timeout: 10000,
+            }
+        );
 
         const address = response.data?.address || {};
 
@@ -242,7 +255,10 @@ app.get("/freshliance/devices", async (req, res) => {
             }
 
             if (device.latitude && device.longitude) {
-                locationText = await reverseGeocode(device.latitude, device.longitude);
+                locationText = await reverseGeocode(
+                    device.latitude,
+                    device.longitude
+                );
                 await sleep(250);
             }
 
@@ -280,6 +296,7 @@ app.get("/health", (req, res) => {
     res.json({
         ok: true,
         message: "Freshliance proxy çalýþýyor",
+        privateKeyPath: PRIVATE_KEY_PATH,
     });
 });
 
@@ -287,4 +304,5 @@ const PORT = process.env.PORT || 4001;
 
 app.listen(PORT, () => {
     console.log(`Freshliance proxy running on http://localhost:${PORT}`);
+    console.log(`Private key path: ${PRIVATE_KEY_PATH}`);
 });

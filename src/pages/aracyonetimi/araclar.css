@@ -1,5 +1,4 @@
-﻿/* ─── Root ─────────────────────────────────────────── */
-.ar-root {
+﻿.ar-root {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -8,7 +7,6 @@
     font-family: 'DM Sans', 'Segoe UI', sans-serif;
 }
 
-/* ─── Toast ─────────────────────────────────────────── */
 .ar-toast {
     position: fixed;
     top: 20px;
@@ -62,7 +60,6 @@
     background: #ef4444;
 }
 
-/* ─── Top Bar ───────────────────────────────────────── */
 .ar-topbar {
     display: flex;
     align-items: center;
@@ -115,7 +112,6 @@
     flex-wrap: wrap;
 }
 
-/* ─── View Toggle ───────────────────────────────────── */
 .ar-view-toggle {
     display: flex;
     background: #f1f5f9;
@@ -145,10 +141,10 @@
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
-/* ─── Buttons ───────────────────────────────────────── */
 .ar-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 0 16px;
     height: 38px;
@@ -185,13 +181,90 @@
         background: #e2e8f0;
     }
 
-/* ─── Form Panel ────────────────────────────────────── */
+.ar-btn-excel {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1.5px solid #a7f3d0;
+}
+
+    .ar-btn-excel:hover {
+        background: #d1fae5;
+    }
+
+.ar-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.ar-stat-card {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 14px 16px;
+}
+
+    .ar-stat-card p {
+        margin: 0 0 6px;
+        font-size: 11px;
+        font-weight: 800;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ar-stat-card strong {
+        display: block;
+        font-size: 26px;
+        line-height: 1;
+        font-weight: 900;
+        color: #0f172a;
+    }
+
+    .ar-stat-card span {
+        display: block;
+        margin-top: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #94a3b8;
+    }
+
+.ar-stat-blue strong {
+    color: #1d4ed8;
+}
+
+.ar-stat-green strong {
+    color: #15803d;
+}
+
+.ar-stat-purple strong {
+    color: #7c3aed;
+}
+
 .ar-form-panel {
     background: #fff;
     border-radius: 16px;
     border: 1.5px solid #e2e8f0;
     padding: 20px;
     animation: ar-fade-up 0.2s ease;
+}
+
+.ar-form-head {
+    margin-bottom: 16px;
+}
+
+.ar-form-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.ar-form-desc {
+    margin: 4px 0 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: #94a3b8;
 }
 
 .ar-form-grid {
@@ -227,6 +300,7 @@
     box-sizing: border-box;
     transition: border-color 0.15s, background 0.15s;
     width: 100%;
+    font-family: inherit;
 }
 
     .ar-input::placeholder {
@@ -248,7 +322,6 @@
     border-top: 1px solid #f1f5f9;
 }
 
-/* ─── Search Row ────────────────────────────────────── */
 .ar-search-row {
     display: flex;
     align-items: center;
@@ -267,6 +340,7 @@
     transform: translateY(-50%);
     color: #94a3b8;
     pointer-events: none;
+    display: flex;
 }
 
 .ar-search-input {
@@ -318,7 +392,6 @@
     white-space: nowrap;
 }
 
-/* ─── Loading ───────────────────────────────────────── */
 .ar-loading {
     padding: 20px;
     text-align: center;
@@ -327,7 +400,77 @@
     color: #94a3b8;
 }
 
-/* ─── Card Grid ─────────────────────────────────────── */
+.ar-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    flex-wrap: wrap;
+}
+
+.ar-pagination-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #64748b;
+}
+
+.ar-page-size {
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 9px;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    outline: none;
+}
+
+.ar-pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ar-page-btn {
+    height: 32px;
+    padding: 0 11px;
+    border-radius: 9px;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+    .ar-page-btn:hover:not(:disabled) {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .ar-page-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+.ar-page-current {
+    min-width: 72px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 900;
+    color: #0f172a;
+}
+
 .ar-card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -411,7 +554,12 @@
         color: #15803d;
     }
 
-/* ─── Avatar ────────────────────────────────────────── */
+.ar-no-plate {
+    font-size: 12px;
+    color: #94a3b8;
+    font-style: italic;
+}
+
 .ar-avatar {
     width: 40px;
     height: 40px;
@@ -422,12 +570,33 @@
     font-size: 13px;
     font-weight: 800;
     flex-shrink: 0;
+    color: #fff;
 }
 
 .ar-avatar-sm {
     width: 30px;
     height: 30px;
     font-size: 11px;
+}
+
+.ar-avatar-c0 {
+    background: linear-gradient(135deg,#667eea,#764ba2);
+}
+
+.ar-avatar-c1 {
+    background: linear-gradient(135deg,#f093fb,#f5576c);
+}
+
+.ar-avatar-c2 {
+    background: linear-gradient(135deg,#4facfe,#00f2fe);
+}
+
+.ar-avatar-c3 {
+    background: linear-gradient(135deg,#43e97b,#38f9d7);
+}
+
+.ar-avatar-c4 {
+    background: linear-gradient(135deg,#fa709a,#fee140);
 }
 
 .ar-card-driver {
@@ -467,25 +636,57 @@
     border: 1px solid #f1f5f9;
 }
 
-    .ar-info-item span {
-        display: block;
-        font-size: 10px;
-        font-weight: 700;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+.ar-info-full {
+    grid-column: 1 / -1;
+}
+
+.ar-info-item span {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ar-info-item strong {
+    display: block;
+    margin-top: 3px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #334155;
+    word-break: break-all;
+}
+
+.ar-card-actions,
+.ar-table-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ar-edit-icon {
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1.5px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .ar-edit-icon:hover {
+        background: #dbeafe;
+        border-color: #93c5fd;
     }
 
-    .ar-info-item strong {
-        display: block;
-        margin-top: 3px;
-        font-size: 12.5px;
-        font-weight: 700;
-        color: #334155;
-        word-break: break-all;
-    }
-
-/* ─── Delete Icon Button ────────────────────────────── */
 .ar-delete-icon {
     width: 30px;
     height: 30px;
@@ -506,7 +707,6 @@
         border-color: #fda4af;
     }
 
-/* ─── Table ─────────────────────────────────────────── */
 .ar-table-wrap {
     background: #fff;
     border-radius: 16px;
@@ -600,7 +800,6 @@
     font-weight: 500;
 }
 
-/* ─── Empty State ───────────────────────────────────── */
 .ar-empty {
     display: flex;
     flex-direction: column;
@@ -625,147 +824,6 @@
         margin: 0;
     }
 
-.ar-btn-excel {
-    background: #ecfdf5;
-    color: #047857;
-    border: 1.5px solid #a7f3d0;
-}
-
-    .ar-btn-excel:hover {
-        background: #d1fae5;
-    }
-
-.ar-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 14px;
-    background: #fff;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 14px;
-    flex-wrap: wrap;
-}
-
-.ar-pagination-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    font-weight: 800;
-    color: #64748b;
-}
-
-.ar-page-size {
-    height: 32px;
-    padding: 0 10px;
-    border-radius: 9px;
-    border: 1.5px solid #e2e8f0;
-    background: #f8fafc;
-    font-size: 12px;
-    font-weight: 700;
-    color: #0f172a;
-    outline: none;
-}
-
-.ar-pagination-buttons {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.ar-page-btn {
-    height: 32px;
-    padding: 0 11px;
-    border-radius: 9px;
-    border: 1.5px solid #e2e8f0;
-    background: #fff;
-    color: #334155;
-    font-size: 12px;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-    .ar-page-btn:hover:not(:disabled) {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-    }
-
-    .ar-page-btn:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-    }
-
-.ar-page-current {
-    min-width: 72px;
-    text-align: center;
-    font-size: 12px;
-    font-weight: 900;
-    color: #0f172a;
-}
-.ar-form-head {
-    margin-bottom: 16px;
-}
-
-.ar-form-title {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 900;
-    color: #0f172a;
-}
-
-.ar-form-desc {
-    margin: 4px 0 0;
-    font-size: 12px;
-    font-weight: 500;
-    color: #94a3b8;
-}
-
-.ar-card-actions,
-.ar-table-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.ar-edit-icon {
-    height: 30px;
-    padding: 0 10px;
-    border-radius: 8px;
-    border: 1.5px solid #bfdbfe;
-    background: #eff6ff;
-    color: #1d4ed8;
-    font-size: 12px;
-    font-weight: 800;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: all 0.15s;
-}
-
-    .ar-edit-icon:hover {
-        background: #dbeafe;
-        border-color: #93c5fd;
-    }
-
-@media (max-width: 640px) {
-    .ar-pagination {
-        align-items: stretch;
-    }
-
-    .ar-pagination-left,
-    .ar-pagination-buttons {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .ar-page-btn {
-        flex: 1;
-    }
-}
-
-/* ─── Animations ────────────────────────────────────── */
 @keyframes ar-fade-up {
     from {
         opacity: 0;
@@ -790,19 +848,32 @@
     }
 }
 
-/* ─── Responsive ────────────────────────────────────── */
 @media (max-width: 640px) {
     .ar-topbar {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .ar-card-grid {
+    .ar-topbar-right,
+    .ar-view-toggle,
+    .ar-btn {
+        width: 100%;
+    }
+
+    .ar-toggle-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .ar-stats,
+    .ar-card-grid,
+    .ar-form-grid {
         grid-template-columns: 1fr;
     }
 
-    .ar-form-grid {
-        grid-template-columns: 1fr;
+    .ar-search-row {
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .ar-table-wrap {
@@ -811,6 +882,20 @@
 
     .ar-table {
         table-layout: auto;
-        min-width: 580px;
+        min-width: 760px;
+    }
+
+    .ar-pagination {
+        align-items: stretch;
+    }
+
+    .ar-pagination-left,
+    .ar-pagination-buttons {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .ar-page-btn {
+        flex: 1;
     }
 }

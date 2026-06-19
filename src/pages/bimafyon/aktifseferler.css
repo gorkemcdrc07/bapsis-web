@@ -2234,6 +2234,27 @@
     background: #ffffff;
     color: #4f46e5;
 }
+.navlun-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.navlun-match-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 10px;
+    background: #eef4ff;
+    color: #315efb;
+    cursor: pointer;
+    font-weight: 900;
+    flex-shrink: 0;
+}
+
+    .navlun-match-btn:hover {
+        background: #dbeafe;
+    }
 
 @keyframes drawerSlideIn {
     from {

@@ -100,7 +100,16 @@ export async function araclariGetir() {
 export async function navlunlariGetir() {
     const { data, error } = await supabase
         .from("navlunlar")
-        .select("fiyat, varis1, varis2, varis3");
+        .select("id, fiyat, varis1, varis2, varis3, aktif");
+
+    if (error) return [];
+    return data || [];
+}
+
+export async function ugramaSartlariGetir() {
+    const { data, error } = await supabase
+        .from("ugrama_sartlari")
+        .select("*");
 
     if (error) return [];
     return data || [];

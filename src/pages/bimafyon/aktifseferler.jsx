@@ -10,6 +10,7 @@ import SatirIslemMenusu from "./aktifseferler/SatirIslemMenusu";
 import SutunPaneli from "./aktifseferler/SutunPaneli";
 import AktifSeferTablosu from "./aktifseferler/AktifSeferTablosu";
 import AktifSeferToolbar from "./aktifseferler/AktifSeferToolbar";
+import NavlunEslesmeModal from "./aktifseferler/NavlunEslesmeModal";
 import { renderAktifSeferHucre } from "./aktifseferler/hucreRender";
 import { navlunFiyatiBul } from "./aktifseferler/navlunIslemleri";
 import { isTripReadyToComplete } from "./aktifseferler/tamamlamaKontrol";
@@ -71,6 +72,7 @@ import {
     degisiklikKaydiEkle,
     degisiklikleriGetir,
     navlunlariGetir,
+    ugramaSartlariGetir,
     freshlianceCihazlariGetir,
 } from "./aktifseferler/veriServisi";
 import {
@@ -87,6 +89,8 @@ export default function AktifSeferler() {
     const [rows, setRows] = useState([]);
     const [araclar, setAraclar] = useState([]);
     const [navlunlar, setNavlunlar] = useState([]);
+    const [ugramaSartlari, setUgramaSartlari] = useState([]);
+    const [navlunMatchRow, setNavlunMatchRow] = useState(null);
     const [freshlianceDevices, setFreshlianceDevices] = useState([]);
     const [columns, setColumns] = useState(columnsData);
 
@@ -123,6 +127,7 @@ export default function AktifSeferler() {
     const fileInputRef = useRef(null);
     const rowsRef = useRef([]);
     const navlunlarRef = useRef([]);
+    const ugramaSartlariRef = useRef([]);
     const fileDragDepthRef = useRef(0);
     const editingStartValuesRef = useRef({});
 
@@ -237,6 +242,7 @@ export default function AktifSeferler() {
         fetchAktifSeferler();
         fetchAraclar();
         fetchNavlunlar();
+        fetchUgramaSartlari();
         fetchChangeLogs();
 
         const freshlianceInterval = setInterval(() => {
@@ -260,6 +266,10 @@ export default function AktifSeferler() {
     useEffect(() => {
         navlunlarRef.current = navlunlar;
     }, [navlunlar]);
+
+    useEffect(() => {
+        ugramaSartlariRef.current = ugramaSartlari;
+    }, [ugramaSartlari]);
 
     useEffect(() => {
         if (!filteredRows?.length) return;
@@ -298,6 +308,11 @@ export default function AktifSeferler() {
     async function fetchNavlunlar() {
         const data = await navlunlariGetir();
         setNavlunlar(data);
+    }
+    async function fetchUgramaSartlari() {
+        const data = await ugramaSartlariGetir();
+        setUgramaSartlari(data || []);
+        ugramaSartlariRef.current = data || [];
     }
     async function fetchFreshlianceDevices() {
         const activeCodes = [
@@ -350,9 +365,12 @@ export default function AktifSeferler() {
         });
     }
     function findNavlunPrice(row) {
-        return navlunFiyatiBul(row, navlunlarRef.current);
+        return navlunFiyatiBul(
+            row,
+            navlunlarRef.current,
+            ugramaSartlariRef.current
+        );
     }
-
 
     function askCompletionIfReady(row) {
         if (!row?.id) return;
@@ -635,13 +653,13 @@ export default function AktifSeferler() {
             openActionRowId,
             toggleActionMenu,
             setAracPanelRow,
+            setNavlunMatchRow,
             editingStartValuesRef,
             updateCell,
             saveCellOnBlur,
             options,
         });
     }
-
     return (
         <div
             className={isDragActive ? "aktif-seferler-page drag-active" : "aktif-seferler-page"}
@@ -879,6 +897,71 @@ export default function AktifSeferler() {
                         )}
                     </div>
                 </div>
+            )}
+            {navlunMatchRow && (
+                <NavlunEslesmeModal
+                    row={navlunMatchRow}
+                    navlunlar={navlunlar}
+                    ugramaSartlari={ugramaSartlari}
+                    onClose={() => setNavlunMatchRow(null)}
+                    onCreated={(newRecord) => {
+                        setNavlunlar((prev) => [newRecord, ...prev]);
+                        navlunlarRef.current = [newRecord, ...navlunlarRef.current];
+                    }}
+                    onUpdated={(updatedRecord) => {
+                        setNavlunlar((prev) =>
+                            prev.map((item) =>
+                                item.id === updatedRecord.id ? updatedRecord : item
+                            )
+                        );
+
+                        navlunlarRef.current = navlunlarRef.current.map((item) =>
+                            item.id === updatedRecord.id ? updatedRecord : item
+                        );
+                    }}
+                    onSelect={async (match) => {
+                        await updateRowFieldById(
+                            navlunMatchRow.id,
+                            "varis1",
+                            match.varis1 || "",
+                            false
+                        );
+
+                        await updateRowFieldById(
+                            navlunMatchRow.id,
+                            "varis2",
+                            match.varis2 || "",
+                            false
+                        );
+
+                        await updateRowFieldById(
+                            navlunMatchRow.id,
+                            "varis3",
+                            match.varis3 || "",
+                            false
+                        );
+
+                        const updated = {
+                            ...navlunMatchRow,
+                            varis1: match.varis1 || "",
+                            varis2: match.varis2 || "",
+                            varis3: match.varis3 || "",
+                        };
+
+                        const price = findNavlunPrice(updated);
+
+                        if (price !== null) {
+                            await updateRowFieldById(
+                                navlunMatchRow.id,
+                                "navlun",
+                                price,
+                                true
+                            );
+                        }
+
+                        setNavlunMatchRow(null);
+                    }}
+                />
             )}
             <ExcelRevizyonModal
                 revisionChanges={revisionChanges}

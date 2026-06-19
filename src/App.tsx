@@ -16,6 +16,11 @@ import Araclar from "./pages/aracyonetimi/araclar";
 import DonusSiparis from "./pages/Donusler/Siparis";
 import DonusPlakaAtama from "./pages/Donusler/PlakaAtama";
 import DonusTamamlananSeferler from "./pages/Donusler/TamamlananSeferler";
+import DonusNavlunlar from "./pages/Donusler/Navlunlar";
+
+import Vkn from "./pages/ekkayitlar/vkn";
+import UgramaSart from "./pages/ekkayitlar/ugramasart";
+import NavlunSart from "./pages/ekkayitlar/navlunsart";
 
 function App() {
     return (
@@ -30,7 +35,11 @@ function App() {
                 <Route path="/bimafyon/manuelsiparis" element={<ManuelSiparis />} />
                 <Route path="/bimafyon/aktifseferler" element={<AktifSeferler />} />
                 <Route path="/bimafyon/silinenseferler" element={<SilinenSeferler />} />
-                <Route path="/bimafyon/tamamlananseferler" element={<TamamlananSeferler />} />
+
+                <Route
+                    path="/bimafyon/tamamlananseferler"
+                    element={<TamamlananSeferler />}
+                />
 
                 <Route
                     path="/bimafyon/aktifseferler/qrokutma"
@@ -46,6 +55,12 @@ function App() {
                     path="/donusler/tamamlananseferler"
                     element={<DonusTamamlananSeferler />}
                 />
+
+                <Route path="/donusler/navlunlar" element={<DonusNavlunlar />} />
+
+                <Route path="/ekkayitlar/vkn" element={<Vkn />} />
+                <Route path="/ekkayitlar/ugrama" element={<UgramaSart />} />
+                <Route path="/ekkayitlar/navlun" element={<NavlunSart />} />
             </Route>
         </Routes>
     );

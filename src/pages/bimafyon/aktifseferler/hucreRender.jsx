@@ -5,6 +5,7 @@
     openActionRowId,
     toggleActionMenu,
     setAracPanelRow,
+    setNavlunMatchRow,
     editingStartValuesRef,
     updateCell,
     saveCellOnBlur,
@@ -90,6 +91,39 @@
                 >
                     📞
                 </a>
+            </div>
+        );
+    }
+
+    if (column.key === "navlun") {
+        const isEmpty = !String(row.navlun || "").trim();
+
+        return (
+            <div className="navlun-cell">
+                <input
+                    className="table-edit-input"
+                    value={row.navlun || ""}
+                    onFocus={() => {
+                        editingStartValuesRef.current[`${row.id}_navlun`] =
+                            row.navlun ?? "";
+                    }}
+                    onChange={(e) => updateCell(rowIndex, "navlun", e.target.value)}
+                    onBlur={(e) => saveCellOnBlur(row.id, "navlun", e.target.value)}
+                />
+
+                {isEmpty && (
+                    <button
+                        type="button"
+                        className="navlun-match-btn"
+                        title="Navlun eşleştir"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setNavlunMatchRow?.(row);
+                        }}
+                    >
+                        🔍
+                    </button>
+                )}
             </div>
         );
     }
