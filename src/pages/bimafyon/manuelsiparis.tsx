@@ -14,7 +14,29 @@ const emptyForm = {
     aciklama: "",
 };
 
-function normalizeDate(value) {
+type ToastType = "success" | "error" | "warning" | "info";
+
+type ToastState = {
+    show: boolean;
+    type: ToastType;
+    title: string;
+    message: string;
+};
+
+type ManuelSiparisOrder = typeof emptyForm & {
+    id: string;
+    kaynak?: string;
+    durum?: string;
+};
+
+type ManuelSiparisProps = {
+    onOnayla?: (payload: {
+        batchId: string;
+        orders: ManuelSiparisOrder[];
+    }) => void;
+};
+
+function normalizeDate(value: string) {
     if (!value) return "";
 
     const text = String(value).trim();
@@ -34,7 +56,7 @@ function normalizeDate(value) {
     return text;
 }
 
-function formatDate(value) {
+function formatDate(value: string) {
     if (!value) return "-";
 
     if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -45,7 +67,7 @@ function formatDate(value) {
     return value;
 }
 
-function splitBolgeToVaris(bolge) {
+function splitBolgeToVaris(bolge: string) {
     const parts = String(bolge || "")
         .split("+")
         .map((item) => item.trim())
@@ -59,7 +81,7 @@ function splitBolgeToVaris(bolge) {
     };
 }
 
-function getVarisArray(order) {
+function getVarisArray(order: ManuelSiparisOrder) {
     return [order.varis1, order.varis2, order.varis3, order.varis4].filter(Boolean);
 }
 
@@ -71,45 +93,31 @@ function createBatchId(prefix = "manuel") {
     return `${prefix}_${Date.now()}`;
 }
 
-type ManuelSiparisOrder = typeof emptyForm & {
-    id: string;
-    kaynak?: string;
-    durum?: string;
-};
-
-type ManuelSiparisProps = {
-    onOnayla?: (payload: {
-        batchId: string;
-        orders: ManuelSiparisOrder[];
-    }) => void;
-};
-
 function ManuelSiparis({ onOnayla }: ManuelSiparisProps = {}) {
-    const [orders, setOrders] = useState([]);
+    const [orders, setOrders] = useState<ManuelSiparisOrder[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [form, setForm] = useState(emptyForm);
     const [search, setSearch] = useState("");
-    const [dateFilter, setDateFilter] = useState("all");
-    const [vehicleFilter, setVehicleFilter] = useState("all");
     const [saving, setSaving] = useState(false);
+
+    const [toast, setToast] = useState<ToastState>({
+        show: false,
+        type: "info",
+        title: "",
+        message: "",
+    });
+
+    const showToast = (type: ToastType, title: string, message: string) => {
+        setToast({ show: true, type, title, message });
+
+        window.clearTimeout((showToast as any).timer);
+        (showToast as any).timer = window.setTimeout(() => {
+            setToast((prev) => ({ ...prev, show: false }));
+        }, 3200);
+    };
 
     const toplamPalet = useMemo(
         () => orders.reduce((sum, item) => sum + Number(item.palet || 0), 0),
-        [orders]
-    );
-
-    const uniqueDates = useMemo(
-        () => Array.from(new Set(orders.map((item) => item.tarih).filter(Boolean))).sort(),
-        [orders]
-    );
-
-    const uniqueVehicles = useMemo(
-        () => Array.from(new Set(orders.map((item) => item.aracTipi).filter(Boolean))).sort(),
-        [orders]
-    );
-
-    const multiStopCount = useMemo(
-        () => orders.filter((order) => getVarisArray(order).length > 1).length,
         [orders]
     );
 
@@ -126,22 +134,17 @@ function ManuelSiparis({ onOnayla }: ManuelSiparisProps = {}) {
                 order.varis4,
                 order.aracTipi,
                 order.aciklama,
-                order.kaynak,
             ]
                 .join(" ")
                 .toLocaleLowerCase("tr-TR");
 
-            const matchesSearch = !keyword || text.includes(keyword);
-            const matchesDate = dateFilter === "all" || order.tarih === dateFilter;
-            const matchesVehicle = vehicleFilter === "all" || order.aracTipi === vehicleFilter;
-
-            return matchesSearch && matchesDate && matchesVehicle;
+            return !keyword || text.includes(keyword);
         });
-    }, [orders, search, dateFilter, vehicleFilter]);
+    }, [orders, search]);
 
-    const parseExcelText = (text) => {
+    const parseExcelText = (text: string): ManuelSiparisOrder[] => {
         const lines = text
-            .split("\n")
+            .split(/\r?\n/)
             .map((line) => line.trim())
             .filter(Boolean);
 
@@ -159,7 +162,7 @@ function ManuelSiparis({ onOnayla }: ManuelSiparisProps = {}) {
 
                 if (isHeader) return null;
 
-                const tarih = normalizeDate(cols[0]);
+                const tarih = normalizeDate(cols[0] || "");
                 const bolge = cols[1] || "";
                 const aracTipi = cols[2] || "";
                 const varisler = splitBolgeToVaris(bolge);
@@ -169,145 +172,134 @@ function ManuelSiparis({ onOnayla }: ManuelSiparisProps = {}) {
                     tarih,
                     musteri: "BİM AFYON",
                     ...varisler,
-                    palet: 1,
+                    palet: "1",
                     aracTipi,
                     aciklama: "",
                     kaynak: "Manuel",
                     durum: "Bekliyor",
                 };
             })
-            .filter((item) => item && (item.tarih || item.varis1 || item.aracTipi));
+            .filter(Boolean) as ManuelSiparisOrder[];
     };
 
-    const handleExcelText = (text) => {
+    const handleExcelText = (text: string) => {
         const parsedOrders = parseExcelText(text);
 
         if (!parsedOrders.length) {
-            alert("Aktarılacak veri bulunamadı.");
+            showToast("warning", "Veri bulunamadı", "Aktarılacak geçerli Excel verisi bulunamadı.");
             return;
         }
 
-        setOrders((prev) => [...parsedOrders, ...prev]);
+        setOrders((prev) => [...prev, ...parsedOrders]);
+        showToast("success", "Excel verisi aktarıldı", `${parsedOrders.length} sipariş listeye eklendi.`);
     };
 
-    const handleDrop = (e) => {
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         setIsDragging(false);
 
         const text = e.dataTransfer.getData("text/plain");
 
         if (!text) {
-            alert("Excel’den alanı seçip sürükleyin veya kopyala-yapıştır yapın.");
+            showToast("warning", "Excel verisi okunamadı", "Excel’den alanı seçip sürükleyin veya kopyala-yapıştır yapın.");
             return;
         }
 
         handleExcelText(text);
     };
 
-    const handlePaste = (e) => {
+    const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
         const text = e.clipboardData.getData("text/plain");
         if (text) handleExcelText(text);
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setForm((prev) => ({
             ...prev,
             [e.target.name]: e.target.value,
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         if (!form.tarih || !form.musteri || !form.varis1 || !form.palet) {
-            alert("Sevk tarihi, müşteri, varış 1 ve palet sayısı zorunludur.");
+            showToast("warning", "Eksik bilgi var", "Sevk tarihi, müşteri, varış 1 ve palet sayısı zorunludur.");
             return;
         }
 
         setOrders((prev) => [
+            ...prev,
             {
                 id: `${Date.now()}`,
                 ...form,
                 kaynak: "Manuel",
                 durum: "Bekliyor",
             },
-            ...prev,
         ]);
 
         setForm(emptyForm);
+        showToast("success", "Sipariş eklendi", "Manuel sipariş listeye başarıyla eklendi.");
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = (id: string) => {
         setOrders((prev) => prev.filter((item) => item.id !== id));
+        showToast("info", "Sipariş silindi", "Seçili sipariş listeden kaldırıldı.");
     };
 
     const handleClear = () => {
         setOrders([]);
         setSearch("");
-        setDateFilter("all");
-        setVehicleFilter("all");
+        showToast("info", "Liste temizlendi", "Tüm manuel sipariş kayıtları temizlendi.");
     };
 
-    const buildActiveTripRows = (batchId) =>
+    const buildActiveTripRows = (batchId: string) =>
         orders.map((order) => ({
             kaynak: "Manuel",
-
             sefer_no: null,
-
             sevk_tarihi: order.tarih,
             yukleyen_depo: "BİM AFYON",
             kalkis_yeri: "AFYONKARAHİSAR",
-
             arac_cinsi: order.aracTipi || null,
             cekici: null,
             dorse: null,
-
             tc: null,
             surucu: null,
             telefon: null,
             fatura_vkn: null,
-
             varis1: order.varis1,
             varis2: order.varis2 || null,
             varis3: order.varis3 || null,
             varis4: order.varis4 || null,
-
             palet: Number(order.palet || 1),
-
             irsaliye_no: null,
             dataloger_no: null,
             navlun: null,
-
             guncelleyen_kisi: null,
             guncelledigi_alan: "Manuel Sipariş",
             guncelleme_saati: null,
-
             arac_durumu: "Plaka Bekliyor",
-
             peron_no: null,
             peron_giren_kullanici: null,
             peron_girilme_tarih: null,
             yuklemeden_cikis_saati: null,
-
             aciklama: order.aciklama || null,
-
             planlama_arac: null,
             planlama_truck_id: null,
             planlama_stop_id: null,
-
             batch_id: batchId,
         }));
 
     const handleOnayla = async () => {
         if (orders.length === 0) {
-            alert("Plaka atamaya geçmek için en az bir sipariş oluşturun.");
+            showToast("warning", "Sipariş yok", "Plaka atamaya geçmek için en az bir sipariş oluşturun.");
             return;
         }
 
         const invalidOrder = orders.find((order) => !order.tarih || !order.varis1 || !order.palet);
 
         if (invalidOrder) {
-            alert("Aktarmadan önce tüm siparişlerde tarih, varış 1 ve palet alanı dolu olmalı.");
+            showToast("warning", "Eksik sipariş var", "Tüm siparişlerde tarih, varış 1 ve palet alanı dolu olmalı.");
             return;
         }
 
@@ -317,20 +309,20 @@ function ManuelSiparis({ onOnayla }: ManuelSiparisProps = {}) {
             const batchId = createBatchId("manuel");
             const rows = buildActiveTripRows(batchId);
 
-            const { error } = await supabase
-                .from("aktif_seferler")
-                .insert(rows);
+            const { error } = await supabase.from("aktif_seferler").insert(rows);
 
             if (error) {
                 console.error(error);
-                alert(`Aktif sefer oluşturulamadı: ${error.message}`);
+                showToast("error", "Aktarım başarısız", error.message);
                 return;
             }
 
             onOnayla?.({ batchId, orders });
 
-            alert(`${rows.length} manuel kayıt aktif seferlere aktarıldı.`);
-            handleClear();
+            showToast("success", "Aktarım tamamlandı", `${rows.length} manuel kayıt aktif seferlere aktarıldı.`);
+
+            setOrders([]);
+            setSearch("");
         } finally {
             setSaving(false);
         }
@@ -338,294 +330,271 @@ function ManuelSiparis({ onOnayla }: ManuelSiparisProps = {}) {
 
     return (
         <div className="manuel-page">
-            <section className="top-bar">
-                <div>
-                    <h1>Manuel Sipariş</h1>
-                    <p>Excel’den aktarın veya siparişi elle oluşturun.</p>
-                </div>
+            {toast.show && (
+                <div className={`modern-toast ${toast.type}`}>
+                    <div className="toast-icon">
+                        {toast.type === "success" && "✓"}
+                        {toast.type === "error" && "!"}
+                        {toast.type === "warning" && "!"}
+                        {toast.type === "info" && "i"}
+                    </div>
 
-                <div className="top-actions">
-                    {orders.length > 0 && (
+                    <div className="toast-content">
+                        <strong>{toast.title}</strong>
+                        <p>{toast.message}</p>
+                    </div>
+
+                    <button
+                        type="button"
+                        className="toast-close"
+                        onClick={() => setToast((prev) => ({ ...prev, show: false }))}
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+
+            <div className="manuel-shell">
+                <section className="manuel-header">
+                    <div>
+                        <span>Manuel Sipariş İşlemi</span>
+                        <h1>Sipariş Oluştur</h1>
+                        <p>Excel’den hızlı aktarım yapın veya tekil siparişi manuel ekleyin.</p>
+                    </div>
+
+                    <div className="manuel-header-actions">
                         <button
                             type="button"
                             className="ghost-btn"
                             onClick={handleClear}
-                            disabled={saving}
+                            disabled={saving || orders.length === 0}
                         >
-                            Listeyi Temizle
+                            Temizle
                         </button>
-                    )}
 
-                    <button
-                        type="button"
-                        className="success-btn"
-                        onClick={handleOnayla}
-                        disabled={saving}
-                    >
-                        {saving ? "Aktarılıyor…" : "Plaka Atamaya Geç"}
-                    </button>
-                </div>
-            </section>
+                        <button
+                            type="button"
+                            className="success-btn"
+                            onClick={handleOnayla}
+                            disabled={saving || orders.length === 0}
+                        >
+                            {saving ? "Aktarılıyor..." : "Plaka Atamaya Geç"}
+                        </button>
+                    </div>
+                </section>
 
-            <section className="summary-row">
-                <div className="summary-card">
-                    <span>Toplam Sipariş</span>
-                    <strong>{orders.length}</strong>
-                </div>
+                <section
+                    className={`excel-drop ${isDragging ? "active" : ""}`}
+                    tabIndex={0}
+                    onPaste={handlePaste}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                >
+                    <div className="excel-drop-icon">⇩</div>
 
-                <div className="summary-card">
-                    <span>Toplam Palet</span>
-                    <strong>{toplamPalet}</strong>
-                </div>
+                    <div>
+                        <h2>Excel verisini buraya bırak</h2>
+                        <p>Yükleme Tarihi, Bölge ve Araç Tipi kolonlarını destekler.</p>
+                    </div>
 
-                <div className="summary-card">
-                    <span>Çoklu Varış</span>
-                    <strong>{multiStopCount}</strong>
-                </div>
+                    <strong>{orders.length} Sipariş</strong>
+                </section>
 
-                <div className="summary-card">
-                    <span>Gösterilen</span>
-                    <strong>{filteredOrders.length}</strong>
-                </div>
-            </section>
-
-            <section className="content-grid">
-                <div className="left-panel">
-                    <div
-                        className={`drop-zone ${isDragging ? "active" : ""}`}
-                        tabIndex={0}
-                        onPaste={handlePaste}
-                        onDragOver={(e) => {
-                            e.preventDefault();
-                            setIsDragging(true);
-                        }}
-                        onDragLeave={() => setIsDragging(false)}
-                        onDrop={handleDrop}
-                    >
-                        <div className="drop-icon">↧</div>
+                <form className="order-form-card" onSubmit={handleSubmit}>
+                    <div className="form-head">
                         <div>
-                            <h2>Excel Verisini Sürükle-Bırak</h2>
-                            <p>Yükleme Tarihi, Bölge, Araç Tipi</p>
-                            <small>+ işaretli bölgeler otomatik varışlara ayrılır.</small>
+                            <h2>Yeni Sipariş Bilgileri</h2>
+                            <p>Zorunlu alanları doldurup siparişi listeye ekleyin.</p>
+                        </div>
+
+                        <div className="mini-stats">
+                            <span>Toplam Palet</span>
+                            <b>{toplamPalet}</b>
                         </div>
                     </div>
 
-                    <form className="panel order-form" onSubmit={handleSubmit}>
-                        <div className="panel-title">
-                            <h2>Yeni Sipariş</h2>
-                            <p>Manuel sipariş oluştur.</p>
+                    <div className="form-grid">
+                        <label>
+                            <span>Sevk Tarihi *</span>
+                            <input
+                                type="date"
+                                name="tarih"
+                                value={form.tarih}
+                                onChange={handleChange}
+                            />
+                        </label>
+
+                        <label>
+                            <span>Palet *</span>
+                            <input
+                                type="number"
+                                name="palet"
+                                min="1"
+                                placeholder="1"
+                                value={form.palet}
+                                onChange={handleChange}
+                            />
+                        </label>
+
+                        <label>
+                            <span>Müşteri / Firma *</span>
+                            <input
+                                type="text"
+                                name="musteri"
+                                placeholder="BİM AFYON"
+                                value={form.musteri}
+                                onChange={handleChange}
+                            />
+                        </label>
+
+                        <label>
+                            <span>Araç Tipi</span>
+                            <input
+                                type="text"
+                                name="aracTipi"
+                                placeholder="TIR"
+                                value={form.aracTipi}
+                                onChange={handleChange}
+                            />
+                        </label>
+
+                        <label>
+                            <span>Varış 1 *</span>
+                            <input
+                                type="text"
+                                name="varis1"
+                                placeholder="AFYON"
+                                value={form.varis1}
+                                onChange={handleChange}
+                            />
+                        </label>
+
+                        <label>
+                            <span>Varış 2</span>
+                            <input
+                                type="text"
+                                name="varis2"
+                                placeholder="Opsiyonel"
+                                value={form.varis2}
+                                onChange={handleChange}
+                            />
+                        </label>
+
+                        <label>
+                            <span>Varış 3</span>
+                            <input
+                                type="text"
+                                name="varis3"
+                                placeholder="Opsiyonel"
+                                value={form.varis3}
+                                onChange={handleChange}
+                            />
+                        </label>
+
+                        <label>
+                            <span>Varış 4</span>
+                            <input
+                                type="text"
+                                name="varis4"
+                                placeholder="Opsiyonel"
+                                value={form.varis4}
+                                onChange={handleChange}
+                            />
+                        </label>
+
+                        <label className="full">
+                            <span>Açıklama</span>
+                            <textarea
+                                name="aciklama"
+                                placeholder="Sipariş notu..."
+                                value={form.aciklama}
+                                onChange={handleChange}
+                            />
+                        </label>
+                    </div>
+
+                    <button type="submit" className="primary-btn" disabled={saving}>
+                        Siparişi Listeye Ekle
+                    </button>
+                </form>
+
+                <section className="orders-area">
+                    <div className="orders-toolbar">
+                        <div>
+                            <h2>Sipariş Listesi</h2>
+                            <p>{filteredOrders.length} kayıt gösteriliyor</p>
                         </div>
 
-                        <div className="form-grid">
-                            <label>
-                                <span>Sevk Tarihi *</span>
-                                <input
-                                    type="date"
-                                    name="tarih"
-                                    value={form.tarih}
-                                    onChange={handleChange}
-                                />
-                            </label>
-
-                            <label>
-                                <span>Palet *</span>
-                                <input
-                                    type="number"
-                                    name="palet"
-                                    min="1"
-                                    placeholder="1"
-                                    value={form.palet}
-                                    onChange={handleChange}
-                                />
-                            </label>
-
-                            <label className="full">
-                                <span>Müşteri / Firma *</span>
-                                <input
-                                    type="text"
-                                    name="musteri"
-                                    placeholder="BİM AFYON"
-                                    value={form.musteri}
-                                    onChange={handleChange}
-                                />
-                            </label>
-
-                            <label>
-                                <span>Varış 1 *</span>
-                                <input
-                                    type="text"
-                                    name="varis1"
-                                    placeholder="AFYON"
-                                    value={form.varis1}
-                                    onChange={handleChange}
-                                />
-                            </label>
-
-                            <label>
-                                <span>Varış 2</span>
-                                <input
-                                    type="text"
-                                    name="varis2"
-                                    placeholder="Opsiyonel"
-                                    value={form.varis2}
-                                    onChange={handleChange}
-                                />
-                            </label>
-
-                            <label>
-                                <span>Varış 3</span>
-                                <input
-                                    type="text"
-                                    name="varis3"
-                                    placeholder="Opsiyonel"
-                                    value={form.varis3}
-                                    onChange={handleChange}
-                                />
-                            </label>
-
-                            <label>
-                                <span>Varış 4</span>
-                                <input
-                                    type="text"
-                                    name="varis4"
-                                    placeholder="Opsiyonel"
-                                    value={form.varis4}
-                                    onChange={handleChange}
-                                />
-                            </label>
-
-                            <label className="full">
-                                <span>Araç Tipi</span>
-                                <input
-                                    type="text"
-                                    name="aracTipi"
-                                    placeholder="TIR"
-                                    value={form.aracTipi}
-                                    onChange={handleChange}
-                                />
-                            </label>
-
-                            <label className="full">
-                                <span>Açıklama</span>
-                                <textarea
-                                    name="aciklama"
-                                    placeholder="Sipariş notu..."
-                                    value={form.aciklama}
-                                    onChange={handleChange}
-                                />
-                            </label>
-                        </div>
-
-                        <button type="submit" className="primary-btn" disabled={saving}>
-                            Siparişi Ekle
-                        </button>
-                    </form>
-                </div>
-
-                <div className="right-panel">
-                    <div className="filters-panel">
                         <div className="search-box">
                             <span>⌕</span>
                             <input
                                 type="text"
-                                placeholder="Bölge, müşteri veya araç tipi ara..."
+                                placeholder="Bölge, müşteri veya araç ara..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
-
-                        <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
-                            <option value="all">Tüm tarihler</option>
-                            {uniqueDates.map((date) => (
-                                <option key={date} value={date}>
-                                    {formatDate(date)}
-                                </option>
-                            ))}
-                        </select>
-
-                        <select
-                            value={vehicleFilter}
-                            onChange={(e) => setVehicleFilter(e.target.value)}
-                        >
-                            <option value="all">Tüm araçlar</option>
-                            {uniqueVehicles.map((vehicle) => (
-                                <option key={vehicle} value={vehicle}>
-                                    {vehicle}
-                                </option>
-                            ))}
-                        </select>
                     </div>
 
-                    <div className="panel orders-panel">
-                        <div className="panel-title row">
-                            <div>
-                                <h2>Sipariş Listesi</h2>
-                                <p>{filteredOrders.length} kayıt gösteriliyor.</p>
-                            </div>
+                    {orders.length === 0 ? (
+                        <div className="empty-state">
+                            <strong>Henüz sipariş eklenmedi</strong>
+                            <p>Excel verisini sürükleyin veya manuel sipariş oluşturun.</p>
                         </div>
+                    ) : filteredOrders.length === 0 ? (
+                        <div className="empty-state">
+                            <strong>Sonuç bulunamadı</strong>
+                            <p>Arama alanını değiştirerek tekrar deneyin.</p>
+                        </div>
+                    ) : (
+                        <div className="orders-list">
+                            {filteredOrders.map((order, index) => {
+                                const varisler = getVarisArray(order);
 
-                        {orders.length === 0 ? (
-                            <div className="empty-state">
-                                <strong>Henüz sipariş yok</strong>
-                                <p>Excel verisini sürükleyin veya manuel sipariş ekleyin.</p>
-                            </div>
-                        ) : filteredOrders.length === 0 ? (
-                            <div className="empty-state">
-                                <strong>Sonuç bulunamadı</strong>
-                                <p>Arama veya filtreleri değiştirin.</p>
-                            </div>
-                        ) : (
-                            <div className="orders-list">
-                                {filteredOrders.map((order, index) => {
-                                    const varisler = getVarisArray(order);
+                                return (
+                                    <article className="order-item" key={order.id}>
+                                        <div className="order-index">
+                                            {String(index + 1).padStart(2, "0")}
+                                        </div>
 
-                                    return (
-                                        <article className="order-item" key={order.id}>
-                                            <div className="order-no">
-                                                {String(index + 1).padStart(2, "0")}
+                                        <div className="order-content">
+                                            <div className="route-line">
+                                                {varisler.map((varis, i) => (
+                                                    <React.Fragment key={`${order.id}_${varis}_${i}`}>
+                                                        <span>{varis}</span>
+                                                        {i < varisler.length - 1 && <b>→</b>}
+                                                    </React.Fragment>
+                                                ))}
                                             </div>
 
-                                            <div className="order-main">
-                                                <div className="route-line">
-                                                    {varisler.map((varis, i) => (
-                                                        <React.Fragment key={`${order.id}_${varis}_${i}`}>
-                                                            <span>{varis}</span>
-                                                            {i < varisler.length - 1 && <b>→</b>}
-                                                        </React.Fragment>
-                                                    ))}
-                                                </div>
-
-                                                <div className="order-meta-line">
-                                                    <small>{order.musteri}</small>
-                                                    <span className="source-badge manual">
-                                                        Manuel
-                                                    </span>
-                                                </div>
+                                            <div className="order-meta">
+                                                <small>{order.musteri}</small>
+                                                <small>{formatDate(order.tarih)}</small>
+                                                <small>{order.aracTipi || "Araç tipi yok"}</small>
                                             </div>
+                                        </div>
 
-                                            <div className="order-info">
-                                                <strong>{order.aracTipi || "-"}</strong>
-                                                <span>{formatDate(order.tarih)}</span>
-                                            </div>
+                                        <div className="pallet-pill">{order.palet} Palet</div>
 
-                                            <div className="pallet-pill">{order.palet} Palet</div>
-
-                                            <button
-                                                type="button"
-                                                className="delete-btn"
-                                                onClick={() => handleDelete(order.id)}
-                                                disabled={saving}
-                                            >
-                                                Sil
-                                            </button>
-                                        </article>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </section>
+                                        <button
+                                            type="button"
+                                            className="delete-btn"
+                                            onClick={() => handleDelete(order.id)}
+                                            disabled={saving}
+                                        >
+                                            Sil
+                                        </button>
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    )}
+                </section>
+            </div>
         </div>
     );
 }

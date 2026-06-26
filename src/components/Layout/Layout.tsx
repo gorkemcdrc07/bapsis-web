@@ -4,7 +4,33 @@ import "./Layout.css";
 
 type MenuKey = "bim" | "donus" | "arac" | "ek" | null;
 
-function Layout() {
+interface LayoutProps {
+    onOpenYetkiPanel: () => void;
+}
+
+const MENU_GROUPS = {
+    bim: [
+        { to: "/bimafyon/planlama", label: "Planlama" },
+        { to: "/bimafyon/manuelsiparis", label: "Manuel Sipariş" },
+        { to: "/bimafyon/aktifseferler", label: "Aktif Seferler" },
+        { to: "/bimafyon/silinenseferler", label: "Silinen Seferler" },
+        { to: "/bimafyon/tamamlananseferler", label: "Tamamlanan Seferler" },
+    ],
+    donus: [
+        { to: "/donusler/siparis", label: "Sipariş Oluştur" },
+        { to: "/donusler/plakaatama", label: "Plaka Atama" },
+        { to: "/donusler/tamamlananseferler", label: "Tamamlanan Seferler" },
+        { to: "/donusler/navlunlar", label: "Navlunlar" },
+    ],
+    arac: [{ to: "/aracyonetimi/araclar", label: "Araçlar" }],
+    ek: [
+        { to: "/ekkayitlar/vkn", label: "VKN Ekle" },
+        { to: "/ekkayitlar/ugrama", label: "Uğrama Şartı Ekle" },
+        { to: "/ekkayitlar/navlun", label: "Navlun Şartı Ekle" },
+    ],
+};
+
+function Layout({ onOpenYetkiPanel }: LayoutProps) {
     const navigate = useNavigate();
     const [openMenu, setOpenMenu] = useState<MenuKey>(null);
 
@@ -20,7 +46,7 @@ function Layout() {
         aktifKullanici?.ad || aktifKullanici?.kullanici_adi || "Kullanıcı";
 
     const kullaniciKodu = aktifKullanici?.kullanici_adi || "kullanici";
-    const rol = aktifKullanici?.rol || "personel";
+    const rol = aktifKullanici?.rol || "kullanici";
 
     const toggleMenu = (menu: MenuKey) => {
         setOpenMenu(openMenu === menu ? null : menu);
@@ -28,7 +54,12 @@ function Layout() {
 
     const handleLogout = () => {
         localStorage.removeItem("aktifKullanici");
-        navigate("/");
+        navigate("/login");
+    };
+
+    const handleOpenYetkiPanel = () => {
+        setOpenMenu(null);
+        onOpenYetkiPanel();
     };
 
     return (
@@ -51,13 +82,11 @@ function Layout() {
 
                         {openMenu === "bim" && (
                             <div className="menu-dropdown">
-                                <Link to="/bimafyon/planlama">Planlama</Link>
-                                <Link to="/bimafyon/manuelsiparis">Manuel Sipariş</Link>
-                                <Link to="/bimafyon/aktifseferler">Aktif Seferler</Link>
-                                <Link to="/bimafyon/silinenseferler">Silinen Seferler</Link>
-                                <Link to="/bimafyon/tamamlananseferler">
-                                    Tamamlanan Seferler
-                                </Link>
+                                {MENU_GROUPS.bim.map((item) => (
+                                    <Link key={item.to} to={item.to}>
+                                        {item.label}
+                                    </Link>
+                                ))}
                             </div>
                         )}
                     </div>
@@ -69,10 +98,11 @@ function Layout() {
 
                         {openMenu === "donus" && (
                             <div className="menu-dropdown">
-                                <Link to="/donusler/siparis">Sipariş Oluştur</Link>
-                                <Link to="/donusler/plakaatama">Plaka Atama</Link>
-                                <Link to="/donusler/tamamlananseferler">Tamamlanan Seferler</Link>
-                                <Link to="/donusler/navlunlar">Navlunlar</Link>
+                                {MENU_GROUPS.donus.map((item) => (
+                                    <Link key={item.to} to={item.to}>
+                                        {item.label}
+                                    </Link>
+                                ))}
                             </div>
                         )}
                     </div>
@@ -84,7 +114,11 @@ function Layout() {
 
                         {openMenu === "arac" && (
                             <div className="menu-dropdown">
-                                <Link to="/aracyonetimi/araclar">Araçlar</Link>
+                                {MENU_GROUPS.arac.map((item) => (
+                                    <Link key={item.to} to={item.to}>
+                                        {item.label}
+                                    </Link>
+                                ))}
                             </div>
                         )}
                     </div>
@@ -96,12 +130,25 @@ function Layout() {
 
                         {openMenu === "ek" && (
                             <div className="menu-dropdown">
-                                <Link to="/ekkayitlar/vkn">VKN Ekle</Link>
-                                <Link to="/ekkayitlar/ugrama">Uğrama Şartı Ekle</Link>
-                                <Link to="/ekkayitlar/navlun">Navlun Şartı Ekle</Link>
+                                {MENU_GROUPS.ek.map((item) => (
+                                    <Link key={item.to} to={item.to}>
+                                        {item.label}
+                                    </Link>
+                                ))}
                             </div>
                         )}
                     </div>
+
+                    {rol === "admin" && (
+                        <button
+                            type="button"
+                            className="auth-panel-button"
+                            onClick={handleOpenYetkiPanel}
+                        >
+                            <span className="auth-panel-icon">🔐</span>
+                            <span>Yetkilendirme</span>
+                        </button>
+                    )}
                 </nav>
 
                 <div className="user-box">

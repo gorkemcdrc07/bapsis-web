@@ -1,65 +1,97 @@
 ﻿import { Link } from "react-router-dom";
 import "./Anasayfa.css";
 
-function Anasayfa() {
+function Anasayfa({ onOpenYetkiPanel }) {
     return (
         <div className="home-page">
             <main className="dashboard-content">
-                <section className="hero-card">
+                <section className="home-hero">
                     <div>
-                        <span className="page-badge">
-                            Dashboard
-                        </span>
-
-                        <h2>
-                            Hoş Geldiniz 👋
-                        </h2>
-
+                        <span className="home-label">BAPSİS WEB V2</span>
+                        <h1>Operasyon Yönetim Merkezi</h1>
                         <p>
-                            BAPSİS WEB V2 operasyon panelinden süreçlerinizi hızlıca yönetin.
+                            Sipariş, planlama, araç yönetimi ve aktif sefer süreçlerinizi
+                            tek ekrandan hızlı ve düzenli şekilde yönetin.
                         </p>
                     </div>
 
-                    <button className="primary-action" type="button">
-                        Yeni Sipariş Oluştur
-                    </button>
+                    <div className="hero-actions">
+                        <Link to="/bimafyon/manuelsiparis" className="primary-btn">
+                            Yeni Sipariş Oluştur
+                        </Link>
+
+                        <button type="button" className="secondary-btn" onClick={onOpenYetkiPanel}>
+                            Yetkilendirme Paneli
+                        </button>
+                    </div>
                 </section>
 
-                <section className="quick-actions">
-                    <Link to="/bimafyon/planlama">
-                        <button type="button">Planlama</button>
-                    </Link>
+                <section className="stats-grid">
+                    <div className="stat-card">
+                        <span>Toplam Sipariş</span>
+                        <strong>124</strong>
+                        <p>Bugünkü işlem sayısı</p>
+                    </div>
 
-                    <Link to="/bimafyon/manuelsiparis">
-                        <button type="button">Manuel Sipariş</button>
-                    </Link>
+                    <div className="stat-card">
+                        <span>Aktif Araç</span>
+                        <strong>18</strong>
+                        <p>Operasyondaki araçlar</p>
+                    </div>
 
-                    <Link to="/bimafyon/plakaatama">
-                        <button type="button">Plaka Atama</button>
-                    </Link>
+                    <div className="stat-card">
+                        <span>Tamamlanan Sefer</span>
+                        <strong>76</strong>
+                        <p>Başarıyla kapanan seferler</p>
+                    </div>
 
-                    <Link to="/aracyonetimi/araclar">
-                        <button type="button">Araçlar</button>
-                    </Link>
+                    <div className="stat-card">
+                        <span>Bekleyen İşlem</span>
+                        <strong>9</strong>
+                        <p>Kontrol bekleyen kayıtlar</p>
+                    </div>
                 </section>
 
-                <section className="cards-grid">
-                    <div className="dashboard-card">
-                        <p>Toplam Sipariş</p>
-                        <h3>124</h3>
-                        <span>Bugünkü işlem sayısı</span>
+                <section className="dashboard-panel">
+                    <div className="panel-header">
+                        <div>
+                            <h2>Modül Kısayolları</h2>
+                            <p>Sık kullanılan ekranlara hızlı erişim sağlayın.</p>
+                        </div>
                     </div>
 
-                    <div className="dashboard-card">
-                        <p>Aktif Araçlar</p>
-                        <h3>18</h3>
-                        <span>Operasyondaki araçlar</span>
-                    </div>
+                    <div className="module-grid">
+                        <Link to="/bimafyon/planlama" className="module-card">
+                            <div className="module-icon">01</div>
+                            <div>
+                                <strong>Planlama</strong>
+                                <span>Sefer ve operasyon planlama ekranı</span>
+                            </div>
+                        </Link>
 
-                    <div className="dashboard-card">
-                        <p>Tamamlanan Sefer</p>
-                        <h3>76</h3>
-                        <span>Başarıyla kapanan seferler</span>
+                        <Link to="/bimafyon/manuelsiparis" className="module-card">
+                            <div className="module-icon">02</div>
+                            <div>
+                                <strong>Manuel Sipariş</strong>
+                                <span>Yeni sipariş kaydı oluşturma</span>
+                            </div>
+                        </Link>
+
+                        <Link to="/bimafyon/aktifseferler" className="module-card">
+                            <div className="module-icon">03</div>
+                            <div>
+                                <strong>Aktif Seferler</strong>
+                                <span>Devam eden operasyon takibi</span>
+                            </div>
+                        </Link>
+
+                        <Link to="/aracyonetimi/araclar" className="module-card">
+                            <div className="module-icon">04</div>
+                            <div>
+                                <strong>Araç Yönetimi</strong>
+                                <span>Araç, sürücü ve plaka yönetimi</span>
+                            </div>
+                        </Link>
                     </div>
                 </section>
             </main>

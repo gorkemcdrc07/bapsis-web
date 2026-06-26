@@ -9,13 +9,15 @@ export async function aktifSeferTamamla({
     setRows,
     fetchChangeLogs,
     fetchAktifSeferler,
+    silent = false,
+    refetch = true,
 }) {
     const archived = await saveCompletedTripArchive(
         row,
         "Tüm zorunlu bilgiler dolduruldu"
     );
 
-    if (!archived) return;
+    if (!archived) return { success: false, error: "Arşiv kaydı oluşturulamadı." };
 
     await saveChangeLogs(
         row.id,
@@ -36,14 +38,19 @@ export async function aktifSeferTamamla({
         .eq("id", row.id);
 
     if (error) {
-        alert(`Sefer aktif tablodan silinemedi: ${error.message}`);
-        return;
+        if (!silent) alert(`Sefer aktif tablodan silinemedi: ${error.message}`);
+        return { success: false, error: error.message };
     }
 
-    setCompletePromptRow(null);
-    setCompleteDetailRow(null);
+    setCompletePromptRow?.(null);
+    setCompleteDetailRow?.(null);
+
     setRows((prev) => prev.filter((item) => item.id !== row.id));
 
-    await fetchChangeLogs();
-    await fetchAktifSeferler();
+    if (refetch) {
+        await fetchChangeLogs?.();
+        await fetchAktifSeferler?.();
+    }
+
+    return { success: true };
 }

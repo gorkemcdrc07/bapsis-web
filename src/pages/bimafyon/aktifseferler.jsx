@@ -13,7 +13,10 @@ import AktifSeferToolbar from "./aktifseferler/AktifSeferToolbar";
 import NavlunEslesmeModal from "./aktifseferler/NavlunEslesmeModal";
 import { renderAktifSeferHucre } from "./aktifseferler/hucreRender";
 import { navlunFiyatiBul } from "./aktifseferler/navlunIslemleri";
-import { isTripReadyToComplete } from "./aktifseferler/tamamlamaKontrol";
+import {
+    isTripReadyToComplete,
+    validateRowDetailed,
+} from "./aktifseferler/tamamlamaKontrol";
 import { aktifSeferRealtimeBaslat } from "./aktifseferler/realtimeIslemleri";
 import { aktifSeferExcelDosyasiIsle } from "./aktifseferler/excelImportIslemleri";
 import { aktifSefereAracSec } from "./aktifseferler/aracSecimIslemleri";
@@ -79,6 +82,47 @@ import {
     aktifSeferleriFiltrele,
     sutunlariFiltrele,
 } from "./aktifseferler/filtreIslemleri";
+const COLUMN_VIEW_STORAGE_KEY = "aktifSeferlerColumnView";
+
+function loadColumnView() {
+    try {
+        const saved = localStorage.getItem(COLUMN_VIEW_STORAGE_KEY);
+        return saved ? JSON.parse(saved) : null;
+    } catch {
+        return null;
+    }
+}
+
+function getInitialColumns(defaultColumns) {
+    const saved = loadColumnView();
+
+    if (!saved?.columns?.length) return defaultColumns;
+
+    const defaultMap = new Map(defaultColumns.map((column) => [column.key, column]));
+
+    const savedColumns = saved.columns
+        .map((savedColumn) => {
+            const currentColumn = defaultMap.get(savedColumn.key);
+            if (!currentColumn) return null;
+
+            return {
+                ...currentColumn,
+                width: savedColumn.width || currentColumn.width,
+            };
+        })
+        .filter(Boolean);
+
+    const missingColumns = defaultColumns.filter(
+        (column) => !savedColumns.some((savedColumn) => savedColumn.key === column.key)
+    );
+
+    return [...savedColumns, ...missingColumns];
+}
+
+function getInitialHiddenColumns() {
+    const saved = loadColumnView();
+    return Array.isArray(saved?.hiddenColumns) ? saved.hiddenColumns : [];
+}
 
 
 
@@ -92,13 +136,14 @@ export default function AktifSeferler() {
     const [ugramaSartlari, setUgramaSartlari] = useState([]);
     const [navlunMatchRow, setNavlunMatchRow] = useState(null);
     const [freshlianceDevices, setFreshlianceDevices] = useState([]);
-    const [columns, setColumns] = useState(columnsData);
+    const [columns, setColumns] = useState(() => getInitialColumns(columnsData));
 
     const [loading, setLoading] = useState(false);
     const [excelImporting, setExcelImporting] = useState(false);
     const [isDragActive, setIsDragActive] = useState(false);
     const [draggingColumnKey, setDraggingColumnKey] = useState(null);
     const [dropTargetColumnKey, setDropTargetColumnKey] = useState(null);
+    const [isColumnHideDropActive, setIsColumnHideDropActive] = useState(false);
 
     const [search, setSearch] = useState("");
     const [showColumnPanel, setShowColumnPanel] = useState(false);
@@ -113,7 +158,7 @@ export default function AktifSeferler() {
     const [openActionRowId, setOpenActionRowId] = useState(null);
     const [actionMenuPosition, setActionMenuPosition] = useState(null);
 
-    const [hiddenColumns, setHiddenColumns] = useState([]);
+    const [hiddenColumns, setHiddenColumns] = useState(() => getInitialHiddenColumns());
     const [importSummary, setImportSummary] = useState(null);
     const [revisionChanges, setRevisionChanges] = useState([]);
     const [changedCells, setChangedCells] = useState({});
@@ -123,6 +168,9 @@ export default function AktifSeferler() {
 
     const [selectedDevice, setSelectedDevice] = useState(null);
     const [mapOpen, setMapOpen] = useState(false);
+    const [selectedRowIds, setSelectedRowIds] = useState([]);
+    const [bulkCompleting, setBulkCompleting] = useState(false);
+    const [bulkResultModal, setBulkResultModal] = useState(null);
 
     const fileInputRef = useRef(null);
     const rowsRef = useRef([]);
@@ -233,6 +281,17 @@ export default function AktifSeferler() {
         return sutunlariFiltrele(hideableColumns, columnSearch);
     }, [columnSearch, hideableColumns]);
 
+    const selectedRows = useMemo(() => {
+        return rows.filter((row) => selectedRowIds.includes(row.id));
+    }, [rows, selectedRowIds]);
+
+    const allFilteredSelected = useMemo(() => {
+        return (
+            filteredRows.length > 0 &&
+            filteredRows.every((row) => selectedRowIds.includes(row.id))
+        );
+    }, [filteredRows, selectedRowIds]);
+
     const selectedActionRow = useMemo(() => {
         return rows.find((row) => row.id === openActionRowId) || null;
     }, [rows, openActionRowId]);
@@ -262,6 +321,18 @@ export default function AktifSeferler() {
     useEffect(() => {
         rowsRef.current = rows;
     }, [rows]);
+    useEffect(() => {
+        localStorage.setItem(
+            COLUMN_VIEW_STORAGE_KEY,
+            JSON.stringify({
+                columns: columns.map((column) => ({
+                    key: column.key,
+                    width: column.width,
+                })),
+                hiddenColumns,
+            })
+        );
+    }, [columns, hiddenColumns]);
 
     useEffect(() => {
         navlunlarRef.current = navlunlar;
@@ -609,6 +680,148 @@ export default function AktifSeferler() {
     function closeActionMenu() {
         satirMenuKapat(setOpenActionRowId, setActionMenuPosition);
     }
+    function toggleRowSelection(rowId, checked) {
+        setSelectedRowIds((prev) => {
+            if (checked) {
+                return prev.includes(rowId) ? prev : [...prev, rowId];
+            }
+
+            return prev.filter((id) => id !== rowId);
+        });
+    }
+
+    function toggleAllFilteredRows(checked) {
+        if (!checked) {
+            setSelectedRowIds((prev) =>
+                prev.filter((id) => !filteredRows.some((row) => row.id === id))
+            );
+            return;
+        }
+
+        setSelectedRowIds((prev) => {
+            const next = [...prev];
+
+            filteredRows.forEach((row) => {
+                if (!next.includes(row.id)) next.push(row.id);
+            });
+
+            return next;
+        });
+    }
+
+    async function bulkCompleteTrips() {
+        if (selectedRows.length === 0) {
+            setBulkResultModal({
+                type: "warning",
+                title: "Sefer seçilmedi",
+                description: "Toplu tamamlama için en az bir sefer seçmelisiniz.",
+                completedCount: 0,
+                invalidRows: [],
+                failedRows: [],
+            });
+            return;
+        }
+        const validRows = [];
+        const invalidRows = [];
+
+        selectedRows.forEach((row) => {
+            const missingFields = validateRowDetailed(row);
+
+            if (missingFields.length > 0) {
+                invalidRows.push({ row, missingFields });
+            } else {
+                validRows.push(row);
+            }
+        });
+
+        if (validRows.length === 0) {
+            setBulkResultModal({
+                type: "warning",
+                title: "Seferler tamamlanamaz",
+                description: "Seçilen seferlerde eksik bilgiler var. Eksik alanları tamamlamadan sefer tamamlama yapılamaz.",
+                completedCount: 0,
+                invalidRows,
+                failedRows: [],
+            });
+
+            return;
+        }
+        const confirmMessage =
+            invalidRows.length > 0
+                ? `${validRows.length} sefer tamamlanacak.\n${invalidRows.length} sefer eksik bilgi nedeniyle tamamlanmayacak.\n\nDevam edilsin mi?`
+                : `${validRows.length} sefer tamamlanacak. Devam edilsin mi?`;
+
+        if (!window.confirm(confirmMessage)) return;
+
+        setBulkCompleting(true);
+
+        let completedCount = 0;
+        const failedRows = [];
+
+        try {
+            for (const row of validRows) {
+                const result = await aktifSeferTamamla({
+                    row,
+                    saveCompletedTripArchive,
+                    saveChangeLogs,
+                    setCompletePromptRow,
+                    setCompleteDetailRow,
+                    setRows,
+                    fetchChangeLogs,
+                    fetchAktifSeferler,
+                    silent: true,
+                    refetch: false,
+                });
+
+                if (result?.success) {
+                    completedCount += 1;
+                } else {
+                    failedRows.push(row);
+                }
+            }
+
+            setSelectedRowIds((prev) =>
+                prev.filter((id) => !validRows.some((row) => row.id === id))
+            );
+
+            await fetchChangeLogs();
+            await fetchAktifSeferler();
+
+            let message = `${completedCount} sefer tamamlandı.`;
+
+            if (invalidRows.length > 0) {
+                message += `\n${invalidRows.length} sefer eksik bilgi nedeniyle tamamlanmadı.`;
+            }
+
+            if (failedRows.length > 0) {
+                message += `\n${failedRows.length} sefer hata nedeniyle tamamlanamadı.`;
+            }
+
+            if (invalidRows.length > 0) {
+                const sample = invalidRows
+                    .slice(0, 5)
+                    .map((item) => {
+                        const rowName = item.row.seferNo || item.row.cekici || item.row.id;
+                        const fields = item.missingFields.map((field) => field.label).join(", ");
+                        return `- ${rowName}: ${fields}`;
+                    })
+                    .join("\n");
+
+                message += `\n\nEksik alanlar:\n${sample}`;
+            }
+
+            setBulkResultModal({
+                type: invalidRows.length > 0 || failedRows.length > 0 ? "warning" : "success",
+                title: "Toplu tamamlama sonucu",
+                description: message,
+                completedCount,
+                invalidRows,
+                failedRows,
+            });
+        } finally {
+            setBulkCompleting(false);
+        }
+    }
     function toggleActionMenu(event, row) {
         event.stopPropagation();
 
@@ -622,6 +835,23 @@ export default function AktifSeferler() {
     }
     function toggleColumn(key) {
         sutunGorunurlukDegistir(key, setHiddenColumns);
+    }
+    function hideColumnByDrop(columnKey) {
+        const column = columns.find((item) => item.key === columnKey);
+
+        if (!column || column.fixed || column.key === "actions") return;
+
+        setHiddenColumns((prev) =>
+            prev.includes(columnKey) ? prev : [...prev, columnKey]
+        );
+
+        setIsColumnHideDropActive(false);
+        setDropTargetColumnKey(null);
+    }
+    function resetColumnView() {
+        localStorage.removeItem(COLUMN_VIEW_STORAGE_KEY);
+        setColumns(columnsData);
+        setHiddenColumns([]);
     }
     function startResize(event, key) {
         kolonBoyutlandir(event, key, columns, setColumns);
@@ -692,6 +922,10 @@ export default function AktifSeferler() {
                     showColumnPanel={showColumnPanel}
                     setShowColumnPanel={setShowColumnPanel}
                     visibleColumns={visibleColumns}
+                    selectedCount={selectedRowIds.length}
+                    bulkCompleting={bulkCompleting}
+                    onBulkComplete={bulkCompleteTrips}
+                    resetColumnView={resetColumnView}
                 />
 
                 <SutunPaneli
@@ -720,6 +954,13 @@ export default function AktifSeferler() {
                     startResize={startResize}
                     renderCell={renderCell}
                     closeActionMenu={closeActionMenu}
+                    selectedRowIds={selectedRowIds}
+                    onToggleRowSelection={toggleRowSelection}
+                    allFilteredSelected={allFilteredSelected}
+                    onToggleAllFilteredRows={toggleAllFilteredRows}
+                    isColumnHideDropActive={isColumnHideDropActive}
+                    setIsColumnHideDropActive={setIsColumnHideDropActive}
+                    onHideColumnByDrop={hideColumnByDrop}
 
                     // 🆕 DETAY BUTONU CLICK (GÜNCEL + SAFE VERSION)
                     onRowClick={(row) => {
@@ -999,6 +1240,67 @@ export default function AktifSeferler() {
                 setCompleteDetailRow={setCompleteDetailRow}
                 completeTrip={completeTrip}
             />
+            {bulkResultModal && (
+                <div className="modal-overlay">
+                    <div className={`bulk-result-modal ${bulkResultModal.type}`}>
+                        <div className="bulk-result-icon">
+                            {bulkResultModal.type === "success" ? "✓" : "!"}
+                        </div>
+
+                        <div className="bulk-result-content">
+                            <span className="modal-eyebrow">Toplu Sefer Tamamlama</span>
+                            <strong>{bulkResultModal.title}</strong>
+                            <p>{bulkResultModal.description}</p>
+                        </div>
+
+                        {bulkResultModal.invalidRows?.length > 0 && (
+                            <div className="bulk-missing-list">
+                                <div className="bulk-missing-head">
+                                    <b>Eksik Bilgisi Olan Seferler</b>
+                                    <span>{bulkResultModal.invalidRows.length} kayıt</span>
+                                </div>
+
+                                {bulkResultModal.invalidRows.slice(0, 8).map((item) => (
+                                    <div className="bulk-missing-item" key={item.row.id}>
+                                        <strong>
+                                            {item.row.seferNo || item.row.cekici || `#${item.row.id}`}
+                                        </strong>
+                                        <span>
+                                            {item.missingFields.map((field) => field.label).join(", ")}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {bulkResultModal.failedRows?.length > 0 && (
+                            <div className="bulk-missing-list danger">
+                                <div className="bulk-missing-head">
+                                    <b>İşlem Hatası Alan Seferler</b>
+                                    <span>{bulkResultModal.failedRows.length} kayıt</span>
+                                </div>
+
+                                {bulkResultModal.failedRows.slice(0, 8).map((row) => (
+                                    <div className="bulk-missing-item" key={row.id}>
+                                        <strong>{row.seferNo || row.cekici || `#${row.id}`}</strong>
+                                        <span>Bu kayıt işlem sırasında tamamlanamadı.</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="bulk-result-actions">
+                            <button
+                                type="button"
+                                className="complete-btn"
+                                onClick={() => setBulkResultModal(null)}
+                            >
+                                Tamam
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <SatirIslemMenusu
                 openActionRowId={openActionRowId}
                 actionMenuPosition={actionMenuPosition}
