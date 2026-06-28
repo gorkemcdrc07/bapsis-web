@@ -6,6 +6,16 @@
     filteredColumnList,
     hiddenColumns,
     toggleColumn,
+
+    viewName,
+    setViewName,
+    savedViews,
+    activeViewId,
+    setActiveViewId,
+    saveCurrentView,
+    applySavedView,
+    deleteSavedView,
+    resetColumnView,
 }) {
     if (!showColumnPanel) return null;
 
@@ -16,7 +26,7 @@
         <div className="column-panel-v2" onClick={(e) => e.stopPropagation()}>
             <div className="column-panel-top-v2">
                 <div>
-                    <strong>Sütun görünürlüğü</strong>
+                    <strong>Sütun görünümü</strong>
                     <span>
                         {acikSutunSayisi} sütun açık / {toplamSutunSayisi} sütun
                     </span>
@@ -24,6 +34,69 @@
 
                 <div className="column-panel-badge-v2">
                     {acikSutunSayisi}
+                </div>
+            </div>
+
+            <div className="column-view-manager">
+                <div className="column-view-row">
+                    <select
+                        className="column-view-select"
+                        value={activeViewId || ""}
+                        onChange={(e) => {
+                            const selectedId = e.target.value;
+                            setActiveViewId(selectedId);
+
+                            const selectedView = savedViews.find(
+                                (view) => view.id === selectedId
+                            );
+
+                            if (selectedView) {
+                                applySavedView(selectedView);
+                            }
+                        }}
+                    >
+                        <option value="">Kayıtlı görünüm seç</option>
+
+                        {savedViews.map((view) => (
+                            <option key={view.id} value={view.id}>
+                                {view.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <button
+                        type="button"
+                        className="column-view-danger"
+                        disabled={!activeViewId}
+                        onClick={deleteSavedView}
+                    >
+                        Sil
+                    </button>
+                </div>
+
+                <div className="column-view-row">
+                    <input
+                        className="column-view-input"
+                        value={viewName}
+                        onChange={(e) => setViewName(e.target.value)}
+                        placeholder="Görünüm adı yaz..."
+                    />
+
+                    <button
+                        type="button"
+                        className="column-view-save"
+                        onClick={saveCurrentView}
+                    >
+                        Görünümü Kaydet
+                    </button>
+
+                    <button
+                        type="button"
+                        className="column-view-reset"
+                        onClick={resetColumnView}
+                    >
+                        Sıfırla
+                    </button>
                 </div>
             </div>
 
@@ -55,9 +128,7 @@
                                 {column.label}
                             </span>
 
-                            <small>
-                                {visible ? "Açık" : "Gizli"}
-                            </small>
+                            <small>{visible ? "Açık" : "Gizli"}</small>
                         </button>
                     );
                 })}

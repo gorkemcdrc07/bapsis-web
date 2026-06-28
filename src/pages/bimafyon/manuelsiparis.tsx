@@ -86,10 +86,6 @@ function getVarisArray(order: ManuelSiparisOrder) {
 }
 
 function createBatchId(prefix = "manuel") {
-    if (typeof crypto !== "undefined" && crypto.randomUUID) {
-        return crypto.randomUUID();
-    }
-
     return `${prefix}_${Date.now()}`;
 }
 
@@ -254,7 +250,8 @@ function ManuelSiparis({ onOnayla }: ManuelSiparisProps = {}) {
     };
 
     const buildActiveTripRows = (batchId: string) =>
-        orders.map((order) => ({
+        orders.map((order, index) => ({
+            manuel_sira: index + 1,
             kaynak: "Manuel",
             sefer_no: null,
             sevk_tarihi: order.tarih,
@@ -289,7 +286,6 @@ function ManuelSiparis({ onOnayla }: ManuelSiparisProps = {}) {
             planlama_stop_id: null,
             batch_id: batchId,
         }));
-
     const handleOnayla = async () => {
         if (orders.length === 0) {
             showToast("warning", "Sipariş yok", "Plaka atamaya geçmek için en az bir sipariş oluşturun.");

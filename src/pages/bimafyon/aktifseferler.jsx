@@ -83,6 +83,7 @@ import {
     sutunlariFiltrele,
 } from "./aktifseferler/filtreIslemleri";
 const COLUMN_VIEW_STORAGE_KEY = "aktifSeferlerColumnView";
+const SAVED_COLUMN_VIEWS_KEY = "aktifSeferlerSavedColumnViews";
 
 function loadColumnView() {
     try {
@@ -171,6 +172,16 @@ export default function AktifSeferler() {
     const [selectedRowIds, setSelectedRowIds] = useState([]);
     const [bulkCompleting, setBulkCompleting] = useState(false);
     const [bulkResultModal, setBulkResultModal] = useState(null);
+    const [savedViews, setSavedViews] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem(SAVED_COLUMN_VIEWS_KEY) || "[]");
+        } catch {
+            return [];
+        }
+    });
+
+    const [activeViewId, setActiveViewId] = useState("");
+    const [viewName, setViewName] = useState("");
 
     const fileInputRef = useRef(null);
     const rowsRef = useRef([]);
@@ -848,6 +859,97 @@ export default function AktifSeferler() {
         setIsColumnHideDropActive(false);
         setDropTargetColumnKey(null);
     }
+    function buildCurrentColumnView() {
+        return {
+            columns: columns.map((column) => ({
+                key: column.key,
+                width: column.width,
+            })),
+            hiddenColumns,
+        };
+    }
+
+    function saveCurrentView() {
+        const cleanName = viewName.trim();
+
+        if (!cleanName) {
+            alert("Görünüm adı yazmalısınız.");
+            return;
+        }
+
+        const currentView = buildCurrentColumnView();
+
+        setSavedViews((prev) => {
+            let next;
+
+            if (activeViewId) {
+                next = prev.map((view) =>
+                    view.id === activeViewId
+                        ? {
+                            ...view,
+                            name: cleanName,
+                            ...currentView,
+                            updatedAt: new Date().toISOString(),
+                        }
+                        : view
+                );
+            } else {
+                const newView = {
+                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+                    name: cleanName,
+                    ...currentView,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                };
+
+                next = [newView, ...prev];
+                setActiveViewId(newView.id);
+            }
+
+            localStorage.setItem(SAVED_COLUMN_VIEWS_KEY, JSON.stringify(next));
+            return next;
+        });
+    }
+
+    function applySavedView(view) {
+        if (!view) return;
+
+        const defaultMap = new Map(columnsData.map((column) => [column.key, column]));
+
+        const nextColumns = (view.columns || [])
+            .map((savedColumn) => {
+                const currentColumn = defaultMap.get(savedColumn.key);
+                if (!currentColumn) return null;
+
+                return {
+                    ...currentColumn,
+                    width: savedColumn.width || currentColumn.width,
+                };
+            })
+            .filter(Boolean);
+
+        const missingColumns = columnsData.filter(
+            (column) => !nextColumns.some((item) => item.key === column.key)
+        );
+
+        setColumns([...nextColumns, ...missingColumns]);
+        setHiddenColumns(Array.isArray(view.hiddenColumns) ? view.hiddenColumns : []);
+        setViewName(view.name || "");
+    }
+
+    function deleteSavedView() {
+        if (!activeViewId) return;
+        if (!window.confirm("Bu görünüm silinsin mi?")) return;
+
+        setSavedViews((prev) => {
+            const next = prev.filter((view) => view.id !== activeViewId);
+            localStorage.setItem(SAVED_COLUMN_VIEWS_KEY, JSON.stringify(next));
+            return next;
+        });
+
+        setActiveViewId("");
+        setViewName("");
+    }
     function resetColumnView() {
         localStorage.removeItem(COLUMN_VIEW_STORAGE_KEY);
         setColumns(columnsData);
@@ -936,8 +1038,16 @@ export default function AktifSeferler() {
                     filteredColumnList={filteredColumnList}
                     hiddenColumns={hiddenColumns}
                     toggleColumn={toggleColumn}
+                    viewName={viewName}
+                    setViewName={setViewName}
+                    savedViews={savedViews}
+                    activeViewId={activeViewId}
+                    setActiveViewId={setActiveViewId}
+                    saveCurrentView={saveCurrentView}
+                    applySavedView={applySavedView}
+                    deleteSavedView={deleteSavedView}
+                    resetColumnView={resetColumnView}
                 />
-
                 <AktifSeferTablosu
                     loading={loading}
                     visibleColumns={visibleColumns}

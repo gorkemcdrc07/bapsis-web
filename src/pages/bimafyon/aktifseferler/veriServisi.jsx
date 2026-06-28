@@ -8,7 +8,8 @@ export async function aktifSeferleriGetir() {
     const { data, error } = await supabase
         .from("aktif_seferler")
         .select("*")
-        .order("id", { ascending: false });
+        .order("created_at", { ascending: false })
+        .order("manuel_sira", { ascending: true, nullsFirst: false });
 
     if (error) {
         alert(`Aktif seferler alınamadı: ${error.message}`);
