@@ -1,0 +1,183 @@
+﻿@media (max-width: 1100px) {
+    .ypw-role-row,
+    .ypw-summary-stats,
+    .ypw-role-perm-grid,
+    .ypw-settings-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ypw-page-detail {
+        grid-template-columns: 1fr;
+    }
+
+    .ypw-user-table-row {
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+    }
+
+    .ypw-user-table-dept,
+    .ypw-uitem-special {
+        display: none;
+    }
+}
+
+@media (max-width: 760px) {
+    .ypw-backdrop {
+        padding: 0;
+    }
+
+    .ypw-shell {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    .ypw-header {
+        align-items: flex-start;
+        padding: 12px;
+        flex-direction: column;
+    }
+
+    .ypw-header-right {
+        width: 100%;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .ypw-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 10px 12px;
+    }
+
+    .ypw-tab-view,
+    .ypw-step-view {
+        padding: 12px;
+    }
+
+    .ypw-role-row,
+    .ypw-summary-stats,
+    .ypw-role-perm-grid,
+    .ypw-settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ypw-tab-head,
+    .ypw-matrix-toolbar,
+    .ypw-user-role-change.wide {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .ypw-matrix-filters {
+        flex-wrap: wrap;
+    }
+
+    .ypw-page-row {
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+    }
+
+    .ypw-page-row-stats {
+        display: none;
+    }
+
+    .ypw-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 980px) {
+    .ypw-user-hero,
+    .ypw-user-table-head.modern {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .ypw-user-form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .ypw-user-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .ypw-user-data-table.compact-users {
+        min-width: 760px;
+    }
+
+    .ypw-user-form-panel.modal .ypw-user-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .ypw-user-hero {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 22px;
+    }
+
+    .ypw-new-user-btn {
+        width: 100%;
+    }
+
+    .ypw-clean-table-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .ypw-clean-search {
+        width: 100%;
+    }
+}
+
+@media (max-width: 980px) {
+    .ypw-clean-users-table .ypw-inline-edit-row,
+    .ypw-clean-users-table .ypw-inline-edit-row td,
+    .ypw-clean-users-table .ypw-inline-edit-row tr {
+        display: block;
+        width: 100%;
+    }
+
+    .ypw-inline-user-grid,
+    .ypw-inline-user-grid.small {
+        grid-template-columns: 1fr;
+        min-width: 0;
+    }
+
+    .ypw-row-actions.inline-edit-actions {
+        justify-content: flex-start;
+        padding-top: 0;
+    }
+}
+
+@media (max-width: 760px) {
+    .ypw-users-modern-screen {
+        padding: 10px !important;
+    }
+
+    .ypw-users-toolbar,
+    .ypw-clean-table-head,
+    .ypw-users-filters {
+        flex-direction: column;
+        align-items: stretch;
+        height: auto;
+    }
+
+    .ypw-users-toolbar {
+        padding-bottom: 10px;
+    }
+
+    .ypw-clean-user-card {
+        height: auto;
+        min-height: 520px;
+    }
+
+    .ypw-users-filters select,
+    .ypw-new-user-btn {
+        width: 100%;
+    }
+}

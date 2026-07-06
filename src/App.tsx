@@ -1,5 +1,11 @@
 ﻿import { useEffect, useState } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import {
+    Navigate,
+    Route,
+    Routes,
+    useLocation,
+    useNavigate,
+} from "react-router-dom";
 import { supabase } from "./lib/supabaseClient";
 
 import Login from "./pages/Login";
@@ -42,8 +48,49 @@ const PAGE_KEYS: Record<string, string> = {
     navlun: "ekkayit_navlun",
 };
 
+const SCREEN_NAMES: Record<string, string> = {
+    "/anasayfa": "Anasayfa",
+
+    "/bimafyon/planlama": "BİM Afyon / Planlama",
+    "/bimafyon/manuelsiparis": "BİM Afyon / Manuel Sipariş",
+    "/bimafyon/aktifseferler": "BİM Afyon / Aktif Seferler",
+    "/bimafyon/silinenseferler": "BİM Afyon / Silinen Seferler",
+    "/bimafyon/tamamlananseferler": "BİM Afyon / Tamamlanan Seferler",
+
+    "/donusler/siparis": "Dönüşler / Sipariş Oluştur",
+    "/donusler/plakaatama": "Dönüşler / Plaka Atama",
+    "/donusler/tamamlananseferler": "Dönüşler / Tamamlanan Seferler",
+    "/donusler/navlunlar": "Dönüşler / Navlunlar",
+
+    "/aracyonetimi/araclar": "Araç Yönetimi / Araçlar",
+
+    "/ekkayitlar/vkn": "Ek Kayıtlar / VKN",
+    "/ekkayitlar/ugrama": "Ek Kayıtlar / Uğrama Şartı",
+    "/ekkayitlar/navlun": "Ek Kayıtlar / Navlun Şartı",
+};
+
 function NoAccessPage() {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    let aktifKullanici: any = {};
+
+    try {
+        aktifKullanici = JSON.parse(localStorage.getItem("aktifKullanici") || "{}");
+    } catch {
+        aktifKullanici = {};
+    }
+
+    const ekranAdi = SCREEN_NAMES[location.pathname] || location.pathname;
+
+    const kullaniciAdi =
+        aktifKullanici?.ad ||
+        aktifKullanici?.kullanici_adi ||
+        "Bilinmeyen kullanıcı";
+
+    const rol = aktifKullanici?.rol || "kullanici";
+
+    const tarih = new Date().toLocaleString("tr-TR");
 
     return (
         <div className="no-access-page">
@@ -62,20 +109,40 @@ function NoAccessPage() {
                 <h2>Bu sayfaya erişim yetkiniz bulunmuyor</h2>
 
                 <p>
-                    Görüntülemek istediğiniz sayfa için hesabınıza tanımlı yetki yok.
-                    Erişim talebi oluşturmak için sistem yöneticiniz veya panel admini ile
+                    Bu kullanıcı hesabı ile aşağıdaki ekrana erişim izniniz
+                    bulunmamaktadır. Yetki gerekiyorsa sistem yöneticinizle
                     iletişime geçebilirsiniz.
                 </p>
 
                 <div className="no-access-info">
                     <div>
-                        <strong>Durum</strong>
-                        <span>Yetki reddedildi</span>
+                        <strong>Erişilmek İstenen Ekran</strong>
+                        <span>{ekranAdi}</span>
                     </div>
 
                     <div>
-                        <strong>Önerilen işlem</strong>
-                        <span>Admin ile iletişime geçin</span>
+                        <strong>Kullanıcı</strong>
+                        <span>{kullaniciAdi}</span>
+                    </div>
+
+                    <div>
+                        <strong>Rol</strong>
+                        <span>{rol}</span>
+                    </div>
+
+                    <div>
+                        <strong>Tarih</strong>
+                        <span>{tarih}</span>
+                    </div>
+
+                    <div>
+                        <strong>Durum</strong>
+                        <span>Yetki bulunamadı</span>
+                    </div>
+
+                    <div>
+                        <strong>Çözüm</strong>
+                        <span>Sistem yöneticiniz ile iletişime geçiniz.</span>
                     </div>
                 </div>
 
@@ -91,7 +158,7 @@ function NoAccessPage() {
                     <button
                         type="button"
                         className="no-access-secondary"
-                        onClick={() => window.history.back()}
+                        onClick={() => navigate(-1)}
                     >
                         Geri Git
                     </button>
@@ -100,6 +167,7 @@ function NoAccessPage() {
         </div>
     );
 }
+
 function ProtectedPage({
     pageKey,
     children,
@@ -123,7 +191,11 @@ function ProtectedPage({
                     return;
                 }
 
-                if (aktifKullanici?.rol === "admin") {
+                const localRol = String(aktifKullanici?.rol || "")
+                    .trim()
+                    .toLowerCase();
+
+                if (localRol === "admin") {
                     setAllowed(true);
                     setLoading(false);
                     return;
@@ -141,6 +213,16 @@ function ProtectedPage({
                     return;
                 }
 
+                const dbRol = String(userData.rol || "kullanici")
+                    .trim()
+                    .toLowerCase();
+
+                if (dbRol === "admin") {
+                    setAllowed(true);
+                    setLoading(false);
+                    return;
+                }
+
                 if (userData.yetki_override) {
                     setAllowed(userData.yetki_override?.[pageKey]?.page === true);
                     setLoading(false);
@@ -150,7 +232,7 @@ function ProtectedPage({
                 const { data: roleData, error: roleError } = await supabase
                     .from("yetki_rolleri")
                     .select("perms")
-                    .eq("role_key", userData.rol || "kullanici")
+                    .eq("role_key", dbRol)
                     .single();
 
                 if (roleError || !roleData) {

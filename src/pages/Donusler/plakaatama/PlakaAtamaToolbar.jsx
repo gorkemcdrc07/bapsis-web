@@ -10,93 +10,80 @@ export default function PlakaAtamaToolbar({
     showColumnPanel,
     setShowColumnPanel,
     visibleColumns,
-
     exportExcel,
     fileInputRef,
     excelImporting,
     setShowIrsaliyePanel,
 }) {
     return (
-        <div className="dpa-topbar">
-            <div>
-                <h1 className="dpa-title">
-                    {loading ? "Yükleniyor..." : "Dönüş Plaka Atama"}
-                </h1>
-                <p className="dpa-subtitle">
-                    {filteredRows.length}/{rows.length} kayıt listeleniyor
-                </p>
+        <div className="dpa-modern-toolbar">
+            <div className="dpa-search-wrap modern">
+                <span className="dpa-search-icon">⌕</span>
+                <input
+                    className="dpa-search"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Sefer, plaka, sürücü ara..."
+                />
+                {search && (
+                    <button type="button" className="dpa-clear-search" onClick={() => setSearch("")}>
+                        ×
+                    </button>
+                )}
             </div>
 
-            <div className="dpa-toolbar-actions">
-                <div className="dpa-search-wrap">
-                    <span>⌕</span>
-                    <input
-                        className="dpa-search"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Sefer, plaka, sürücü ara..."
-                    />
-                </div>
+            <select
+                className="dpa-filter modern"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+            >
+                <option value="all">Tüm Durumlar</option>
+                <option value="Plaka Bekliyor">Plaka Bekliyor</option>
+                <option value="Plaka Atandı">Plaka Atandı</option>
+                <option value="Yüklemeye Hazır">Yüklemeye Hazır</option>
+                <option value="Beklemede">Beklemede</option>
+                <option value="Yüklemede">Yüklemede</option>
+                <option value="Yüklendi">Yüklendi</option>
+                <option value="Çıkış Yaptı">Çıkış Yaptı</option>
+            </select>
 
-                <select
-                    className="dpa-filter"
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                    <option value="all">Tüm Durumlar</option>
-                    <option value="Plaka Bekliyor">Plaka Bekliyor</option>
-                    <option value="Plaka Atandı">Plaka Atandı</option>
-                    <option value="Yüklemeye Hazır">Yüklemeye Hazır</option>
-                    <option value="Beklemede">Beklemede</option>
-                    <option value="Yüklemede">Yüklemede</option>
-                    <option value="Yüklendi">Yüklendi</option>
-                    <option value="Çıkış Yaptı">Çıkış Yaptı</option>
-                </select>
-
-                <button
-                    type="button"
-                    className="dpa-irsaliye-btn"
-                    onClick={() => setShowIrsaliyePanel(true)}
-                >
+            <div className="dpa-modern-actions">
+                <button type="button" className="dpa-icon-btn" onClick={() => setShowIrsaliyePanel(true)}>
+                    <span>▣</span>
                     İrsaliye Oku
                 </button>
 
-                <button
-                    type="button"
-                    className="dpa-export-btn"
-                    onClick={exportExcel}
-                >
+                <button type="button" className="dpa-icon-btn green" onClick={() => fileInputRef.current?.click()} disabled={excelImporting}>
+                    <span>▤</span>
+                    {excelImporting ? "Alınıyor..." : "Excel Al"}
+                </button>
+
+                <button type="button" className="dpa-icon-btn green-soft" onClick={exportExcel}>
+                    <span>▧</span>
                     Excel’e Aktar
                 </button>
 
                 <button
                     type="button"
-                    className="dpa-import-btn"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={excelImporting}
-                >
-                    {excelImporting ? "Alınıyor..." : "Excel Al"}
-                </button>
-
-                <button
-                    type="button"
-                    className={showColumnPanel ? "dpa-column-btn active" : "dpa-column-btn"}
+                    className={showColumnPanel ? "dpa-icon-btn blue active" : "dpa-icon-btn blue"}
                     onClick={(e) => {
                         e.stopPropagation();
                         setShowColumnPanel((prev) => !prev);
                     }}
                 >
-                    Sütunlar <span>{visibleColumns.length - 1}</span>
+                    <span>▥</span>
+                    Sütunlar
+                    <b>{visibleColumns.length - 1}</b>
                 </button>
 
-                <button
-                    type="button"
-                    className="dpa-refresh-btn"
-                    onClick={fetchRows}
-                    disabled={loading}
-                >
+                <button type="button" className="dpa-icon-btn" onClick={fetchRows} disabled={loading}>
+                    <span className={loading ? "spin" : ""}>↻</span>
                     Yenile
                 </button>
+            </div>
+
+            <div className="dpa-toolbar-count">
+                {filteredRows.length}/{rows.length} kayıt
             </div>
         </div>
     );

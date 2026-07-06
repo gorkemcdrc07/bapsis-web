@@ -1,0 +1,116 @@
+﻿.ypw-brand h1,
+.ypw-tab-head h2,
+.ypw-step-head h2,
+.ypw-step-head-row h2 {
+    margin: 0;
+    color: var(--ypw-text);
+    letter-spacing: -0.35px;
+}
+
+.ypw-brand p,
+.ypw-tab-head p,
+.ypw-step-head p,
+.ypw-step-head-row p,
+.ypw-role-tile small,
+.ypw-tab small {
+    display: none;
+}
+
+.ypw-tabs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    padding: 12px 18px;
+    background: var(--ypw-panel);
+    border-bottom: 1px solid var(--ypw-border);
+    flex-shrink: 0;
+}
+
+.ypw-tab {
+    min-height: 46px;
+    border: 1px solid var(--ypw-border);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--ypw-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: 0.16s ease;
+    font-weight: 800;
+    font-size: 13px;
+}
+
+    .ypw-tab i {
+        font-size: 18px;
+    }
+
+    .ypw-tab:hover {
+        background: #f9fafb;
+        border-color: var(--ypw-border-strong);
+        color: var(--ypw-text);
+    }
+
+    .ypw-tab.active {
+        background: var(--ypw-dark);
+        border-color: var(--ypw-dark);
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(17, 24, 39, 0.16);
+    }
+
+.ypw-tab-view,
+.ypw-step-view {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 18px;
+}
+
+.ypw-tab-head {
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+    .ypw-tab-head h2,
+    .ypw-step-head h2,
+    .ypw-step-head-row h2 {
+        font-size: 20px;
+        font-weight: 850;
+    }
+
+.ypw-table-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ypw-table-title-icon {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    color: #334155;
+}
+
+.ypw-table-title strong {
+    color: #0f172a;
+    font-size: 19px !important;
+    font-weight: 950 !important;
+}
+
+.ypw-table-title em {
+    font-style: normal;
+    padding: 7px 11px;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.ypw-table-title,
+.ypw-table-title-icon {
+    display: none !important;
+}

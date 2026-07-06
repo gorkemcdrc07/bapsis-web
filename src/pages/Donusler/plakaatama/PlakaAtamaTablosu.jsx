@@ -15,8 +15,8 @@ export default function PlakaAtamaTablosu({
     startResize,
 }) {
     return (
-        <div className="dpa-table-wrap">
-            <table className="dpa-table">
+        <div className="dpa-table-wrap premium">
+            <table className="dpa-table premium-table">
                 <thead>
                     <tr>
                         {visibleColumns.map((column) => (
@@ -26,9 +26,7 @@ export default function PlakaAtamaTablosu({
                                     column.key === "actions" ? "dpa-action-col" : "",
                                     draggingColumnKey === column.key ? "dpa-column-dragging" : "",
                                     dropTargetColumnKey === column.key ? "dpa-column-drop-target" : "",
-                                ]
-                                    .filter(Boolean)
-                                    .join(" ")}
+                                ].filter(Boolean).join(" ")}
                                 style={{
                                     width: column.width,
                                     minWidth: column.width,
@@ -59,68 +57,25 @@ export default function PlakaAtamaTablosu({
 
                 <tbody>
                     {filteredRows.map((row, rowIndex) => (
-                        <tr key={row.id}>
+                        <tr key={row.id} className="dpa-premium-row">
                             {visibleColumns.map((column) => {
                                 if (column.key === "actions") {
                                     return (
-                                        <td
-                                            key={column.key}
-                                            className="dpa-action-col"
-                                            style={{ overflow: "visible" }}
-                                        >
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 6,
-                                                }}
-                                            >
+                                        <td key={column.key} className="dpa-action-col">
+                                            <div className="dpa-row-actions">
                                                 <button
                                                     type="button"
+                                                    className="dpa-map-btn modern-map"
                                                     onClick={(event) => {
                                                         event.stopPropagation();
                                                         openMapForRow?.(row);
                                                     }}
-                                                    style={{
-                                                        display: "inline-flex",
-                                                        alignItems: "center",
-                                                        gap: 5,
-                                                        height: 28,
-                                                        padding: "0 10px",
-                                                        borderRadius: 8,
-                                                        border: "0.5px solid #bfdbfe",
-                                                        background: "#eff6ff",
-                                                        color: "#1d4ed8",
-                                                        fontSize: 11,
-                                                        fontWeight: 600,
-                                                        cursor: "pointer",
-                                                        whiteSpace: "nowrap",
-                                                    }}
                                                 >
-                                                    <svg
-                                                        width="13"
-                                                        height="13"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                    >
-                                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-                                                        <circle cx="12" cy="9" r="2.5" />
-                                                    </svg>
+                                                    <span className="dpa-map-dot">⌖</span>
                                                     Harita
                                                 </button>
 
-                                                <div
-                                                    style={{
-                                                        width: "0.5px",
-                                                        height: 18,
-                                                        background: "#e5e7eb",
-                                                        margin: "0 2px",
-                                                    }}
-                                                />
+                                                <span className="dpa-action-divider" />
 
                                                 {renderCell(row, rowIndex, column)}
                                             </div>
@@ -146,16 +101,24 @@ export default function PlakaAtamaTablosu({
 
                     {!loading && filteredRows.length === 0 && (
                         <tr>
-                            <td className="dpa-empty" colSpan={visibleColumns.length}>
-                                Kayıt bulunamadı.
+                            <td className="dpa-empty modern-empty" colSpan={visibleColumns.length}>
+                                <div className="dpa-empty-card">
+                                    <div className="dpa-empty-icon">□</div>
+                                    <strong>Kayıt bulunamadı</strong>
+                                    <span>Arama veya filtre kriterlerine uygun kayıt yok.</span>
+                                </div>
                             </td>
                         </tr>
                     )}
 
                     {loading && (
                         <tr>
-                            <td className="dpa-empty" colSpan={visibleColumns.length}>
-                                Yükleniyor...
+                            <td className="dpa-empty modern-empty" colSpan={visibleColumns.length}>
+                                <div className="dpa-loading-card">
+                                    <div className="dpa-loader" />
+                                    <strong>Yükleniyor...</strong>
+                                    <span>Lütfen bekleyin, veriler hazırlanıyor.</span>
+                                </div>
                             </td>
                         </tr>
                     )}

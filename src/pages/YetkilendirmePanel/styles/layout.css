@@ -1,0 +1,343 @@
+﻿.ypw-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(17, 24, 39, 0.50);
+    backdrop-filter: blur(6px);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    color: var(--ypw-text);
+}
+
+.ypw-shell {
+    width: min(1380px, 100%);
+    height: min(920px, 96vh);
+    background: var(--ypw-bg);
+    border: 1px solid var(--ypw-border);
+    border-radius: 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--ypw-shadow);
+}
+
+.ypw-header {
+    min-height: 68px;
+    padding: 0 18px;
+    background: var(--ypw-panel);
+    border-bottom: 1px solid var(--ypw-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.ypw-brand {
+    gap: 12px;
+    min-width: 0;
+}
+
+.ypw-brand-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--ypw-dark);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.ypw-brand h1 {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.ypw-header-right {
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.ypw-ctx-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--ypw-border-strong) !important;
+    background: var(--ypw-panel-soft) !important;
+    color: var(--ypw-text) !important;
+    border-radius: 999px;
+    padding: 5px 11px 5px 5px;
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.ypw-ctx-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: var(--ypw-dark) !important;
+    color: #fff !important;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.ypw-ctx-name {
+    max-width: 170px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ypw-body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.ypw-role-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.ypw-role-tile {
+    width: 100%;
+    min-height: 104px;
+    border: 1px solid var(--ypw-border) !important;
+    border-radius: 14px;
+    background: #fff !important;
+    color: var(--ypw-text) !important;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.16s ease;
+}
+
+.ypw-role-tile-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #f3f4f6 !important;
+    border: 1px solid var(--ypw-border) !important;
+    color: var(--ypw-text);
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    grid-row: span 2;
+}
+
+.ypw-role-tile strong {
+    font-size: 15px;
+    font-weight: 850;
+    color: var(--ypw-text);
+}
+
+.ypw-role-tile em {
+    width: fit-content;
+    padding: 5px 9px;
+    font-size: 11.5px;
+}
+
+.ypw-empty-state {
+    min-height: 280px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 10px;
+    color: var(--ypw-muted);
+    text-align: center;
+}
+
+    .ypw-empty-state i {
+        font-size: 42px;
+        color: var(--ypw-soft);
+    }
+
+.ypw-footer {
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 58px;
+    padding: 10px 18px;
+    background: var(--ypw-panel);
+    border-top: 1px solid var(--ypw-border);
+    flex-shrink: 0;
+}
+
+.ypw-footer-step {
+    color: var(--ypw-muted);
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.ypw-loader {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 10px;
+    color: var(--ypw-text);
+}
+
+    .ypw-loader i {
+        font-size: 34px;
+    }
+
+    .ypw-loader strong {
+        font-size: 15px;
+        font-weight: 850;
+    }
+
+.ypw-kicker {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.10);
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.ypw-role-select {
+    width: 120px;
+    height: 34px;
+    border: 1px solid #dbe3ef;
+    border-radius: 10px;
+    background: #fff;
+    color: #0f172a;
+    font-size: 12.5px;
+    font-weight: 850;
+    outline: none;
+    padding: 0 9px;
+}
+
+.ypw-row-actions {
+    display: inline-flex;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+    .ypw-row-actions.icon-only {
+        gap: 7px;
+        flex-wrap: nowrap;
+    }
+
+.ypw-kicker {
+    gap: 8px;
+    padding: 7px 12px;
+    background: #e9f0ff;
+    color: #2563eb;
+    font-size: 12.5px;
+}
+
+.ypw-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 99px;
+    display: inline-block;
+}
+
+    .ypw-dot.active {
+        background: #10b981;
+    }
+
+    .ypw-dot.locked {
+        background: #f59e0b;
+    }
+
+.ypw-role-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 78px;
+    min-height: 30px;
+    padding: 6px 10px;
+    border-radius: 9px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 13px;
+    font-weight: 950;
+}
+
+    .ypw-role-pill.role-admin {
+        background: #ede9fe;
+        color: #5b21b6;
+    }
+
+    .ypw-role-pill.role-mudur {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    .ypw-role-pill.role-yonetici {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+
+.ypw-row-actions.icon-only {
+    gap: 12px;
+}
+
+.ypw-row-actions.icon-only {
+    gap: 7px !important;
+}
+
+.ypw-delete-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    background: #fef2f2;
+    color: #dc2626;
+    margin-bottom: 14px;
+}
+
+    .ypw-delete-icon svg {
+        width: 24px;
+        height: 24px;
+    }
+
+.ypw-delete-content strong {
+    display: block;
+    color: #111827;
+    font-size: 19px;
+    font-weight: 900;
+    margin-bottom: 8px;
+}
+
+.ypw-delete-content p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.55;
+    font-weight: 600;
+}
+
+.ypw-delete-content b {
+    color: #111827;
+}
+
+.ypw-delete-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+}

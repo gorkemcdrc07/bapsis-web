@@ -46,10 +46,19 @@ function Layout({ onOpenYetkiPanel }: LayoutProps) {
         aktifKullanici?.ad || aktifKullanici?.kullanici_adi || "Kullanıcı";
 
     const kullaniciKodu = aktifKullanici?.kullanici_adi || "kullanici";
-    const rol = aktifKullanici?.rol || "kullanici";
+
+    const rol = String(aktifKullanici?.rol || "kullanici")
+        .trim()
+        .toLowerCase();
+
+    const isAdmin = rol === "admin";
 
     const toggleMenu = (menu: MenuKey) => {
         setOpenMenu(openMenu === menu ? null : menu);
+    };
+
+    const closeMenu = () => {
+        setOpenMenu(null);
     };
 
     const handleLogout = () => {
@@ -58,20 +67,21 @@ function Layout({ onOpenYetkiPanel }: LayoutProps) {
     };
 
     const handleOpenYetkiPanel = () => {
-        setOpenMenu(null);
+        closeMenu();
         onOpenYetkiPanel();
     };
 
     return (
-        <div className="layout-page" onClick={() => setOpenMenu(null)}>
+        <div className="layout-page" onClick={closeMenu}>
             <header className="app-topbar" onClick={(e) => e.stopPropagation()}>
-                <Link to="/anasayfa" className="brand">
-                    <div className="brand-logo">B</div>
-
-                    <div>
-                        <h1>BAPSİS WEB V2</h1>
-                        <p>Operasyon Yönetim Paneli</p>
+                <Link to="/anasayfa" className="brand" onClick={closeMenu}>
+                    <div className="brand-route" aria-hidden="true">
+                        <span />
+                        <i />
+                        <span />
                     </div>
+
+                    <h1>Odak Lojistik</h1>
                 </Link>
 
                 <nav className="app-navbar">
@@ -83,7 +93,7 @@ function Layout({ onOpenYetkiPanel }: LayoutProps) {
                         {openMenu === "bim" && (
                             <div className="menu-dropdown">
                                 {MENU_GROUPS.bim.map((item) => (
-                                    <Link key={item.to} to={item.to}>
+                                    <Link key={item.to} to={item.to} onClick={closeMenu}>
                                         {item.label}
                                     </Link>
                                 ))}
@@ -99,7 +109,7 @@ function Layout({ onOpenYetkiPanel }: LayoutProps) {
                         {openMenu === "donus" && (
                             <div className="menu-dropdown">
                                 {MENU_GROUPS.donus.map((item) => (
-                                    <Link key={item.to} to={item.to}>
+                                    <Link key={item.to} to={item.to} onClick={closeMenu}>
                                         {item.label}
                                     </Link>
                                 ))}
@@ -115,7 +125,7 @@ function Layout({ onOpenYetkiPanel }: LayoutProps) {
                         {openMenu === "arac" && (
                             <div className="menu-dropdown">
                                 {MENU_GROUPS.arac.map((item) => (
-                                    <Link key={item.to} to={item.to}>
+                                    <Link key={item.to} to={item.to} onClick={closeMenu}>
                                         {item.label}
                                     </Link>
                                 ))}
@@ -131,7 +141,7 @@ function Layout({ onOpenYetkiPanel }: LayoutProps) {
                         {openMenu === "ek" && (
                             <div className="menu-dropdown">
                                 {MENU_GROUPS.ek.map((item) => (
-                                    <Link key={item.to} to={item.to}>
+                                    <Link key={item.to} to={item.to} onClick={closeMenu}>
                                         {item.label}
                                     </Link>
                                 ))}
@@ -139,7 +149,7 @@ function Layout({ onOpenYetkiPanel }: LayoutProps) {
                         )}
                     </div>
 
-                    {rol === "admin" && (
+                    {isAdmin && (
                         <button
                             type="button"
                             className="auth-panel-button"

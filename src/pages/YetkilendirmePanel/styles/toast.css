@@ -1,0 +1,35 @@
+﻿.ypw-toast {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 10000;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: var(--ypw-dark);
+    color: #fff;
+    box-shadow: 0 14px 34px rgba(17, 24, 39, 0.24);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 750;
+}
+
+    .ypw-toast.error {
+        background: var(--ypw-danger);
+    }
+
+    .ypw-toast.success {
+        background: var(--ypw-success);
+    }
+
+.ypw-spin {
+    animation: ypwSpin 0.8s linear infinite;
+}
+
+@keyframes ypwSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}

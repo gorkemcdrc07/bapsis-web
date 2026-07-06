@@ -1,0 +1,11 @@
+﻿@import "./styles/variables.css";
+@import "./styles/layout.css";
+@import "./styles/buttons.css";
+@import "./styles/tabs.css";
+@import "./styles/permissions.css";
+@import "./styles/summary.css";
+@import "./styles/settings.css";
+@import "./styles/users.css";
+@import "./styles/modal.css";
+@import "./styles/toast.css";
+@import "./styles/responsive.css";

@@ -1,0 +1,267 @@
+﻿.ypw-btn {
+    height: 38px;
+    padding: 0 14px;
+    border: 1px solid var(--ypw-border-strong);
+    border-radius: 10px;
+    background: var(--ypw-panel);
+    color: #374151;
+    font-size: 13px;
+    font-weight: 750;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: 0.16s ease;
+    white-space: nowrap;
+}
+
+    .ypw-btn:hover:not(:disabled) {
+        background: #f9fafb;
+        border-color: #9ca3af;
+    }
+
+    .ypw-btn:active:not(:disabled) {
+        transform: translateY(1px);
+    }
+
+    .ypw-btn:disabled {
+        opacity: 0.48;
+        cursor: not-allowed;
+    }
+
+    .ypw-btn.icon {
+        width: 38px;
+        padding: 0;
+    }
+
+    .ypw-btn.primary {
+        background: var(--ypw-dark);
+        border-color: var(--ypw-dark);
+        color: #fff;
+    }
+
+        .ypw-btn.primary:hover:not(:disabled) {
+            background: var(--ypw-dark-hover);
+        }
+
+    .ypw-btn.ghost {
+        background: #f9fafb;
+    }
+
+    .ypw-btn.success-soft,
+    .ypw-btn.danger-soft {
+        background: #fff;
+        border-color: var(--ypw-border-strong);
+        color: var(--ypw-text);
+    }
+
+    .ypw-btn.sm {
+        height: 32px;
+        padding: 0 11px;
+        font-size: 12px;
+        border-radius: 8px;
+    }
+
+.ypw-clear-x {
+    border: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: var(--ypw-muted);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+
+.ypw-toggle {
+    width: 44px;
+    height: 25px;
+    border: 0;
+    border-radius: 999px;
+    background: #d1d5db;
+    cursor: pointer;
+    position: relative;
+    transition: 0.18s ease;
+    flex-shrink: 0;
+}
+
+    .ypw-toggle.on {
+        background: var(--ypw-dark);
+    }
+
+    .ypw-toggle:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .ypw-toggle span {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 19px;
+        height: 19px;
+        border-radius: 999px;
+        background: #fff;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+        transition: transform 0.18s ease;
+    }
+
+    .ypw-toggle.on span {
+        transform: translateX(19px);
+    }
+
+.ypw-btn.primary.colorful {
+    border-color: transparent;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+}
+
+.ypw-action-btn {
+    height: 32px;
+    padding: 0 9px;
+    border: 1px solid var(--ypw-border-strong);
+    border-radius: 10px;
+    background: #fff;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: 0.15s ease;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+    .ypw-action-btn i {
+        font-size: 15px;
+        color: #475569;
+    }
+
+    .ypw-action-btn:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        transform: translateY(-1px);
+    }
+
+    .ypw-row-actions.icon-only .ypw-action-btn,
+    .ypw-action-btn.edit,
+    .ypw-action-btn.lock,
+    .ypw-action-btn.danger {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border-radius: 11px;
+    }
+
+        .ypw-row-actions.icon-only .ypw-action-btn i {
+            font-size: 16px;
+        }
+
+        .ypw-action-btn.edit:hover {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .ypw-action-btn.lock:hover {
+            background: #fff7ed;
+            border-color: #fed7aa;
+            color: #c2410c;
+        }
+
+        .ypw-action-btn.danger:hover {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+            .ypw-action-btn.edit:hover i,
+            .ypw-action-btn.lock:hover i,
+            .ypw-action-btn.danger:hover i {
+                color: currentColor;
+            }
+
+    .ypw-row-actions.icon-only .ypw-action-btn,
+    .ypw-action-btn.edit,
+    .ypw-action-btn.lock,
+    .ypw-action-btn.danger {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .ypw-action-btn.edit {
+        color: #2563eb;
+        border-color: #bfdbfe;
+    }
+
+    .ypw-action-btn.lock {
+        color: #f59e0b;
+        border-color: #fed7aa;
+    }
+
+    .ypw-action-btn.danger {
+        color: #ef4444;
+        border-color: #fecaca;
+    }
+
+    .ypw-action-btn.edit:hover {
+        background: #eff6ff;
+        border-color: #93c5fd;
+    }
+
+    .ypw-action-btn.lock:hover {
+        background: #fffbeb;
+        border-color: #fcd34d;
+    }
+
+    .ypw-action-btn.danger:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+    }
+
+    .ypw-action-btn.save {
+        background: #166534;
+        border-color: #166534;
+        color: #fff;
+    }
+
+        .ypw-action-btn.save:hover:not(:disabled) {
+            background: #14532d;
+            border-color: #14532d;
+        }
+
+    .ypw-action-btn.cancel {
+        background: #f3f4f6;
+        border-color: var(--ypw-border-strong);
+        color: #374151;
+    }
+
+        .ypw-action-btn.cancel:hover:not(:disabled) {
+            background: #e5e7eb;
+        }
+
+    .ypw-row-actions.icon-only .ypw-action-btn,
+    .ypw-action-btn.edit,
+    .ypw-action-btn.lock,
+    .ypw-action-btn.danger {
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 9px !important;
+    }
+
+.ypw-btn.danger {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #fff;
+}
+
+    .ypw-btn.danger:hover:not(:disabled) {
+        background: #b91c1c;
+        border-color: #b91c1c;
+    }

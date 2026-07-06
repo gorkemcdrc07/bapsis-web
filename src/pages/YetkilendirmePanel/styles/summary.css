@@ -1,0 +1,201 @@
+﻿.ypw-brand,
+.ypw-header-right,
+.ypw-head-actions,
+.ypw-step-head-row,
+.ypw-tab-head,
+.ypw-matrix-toolbar,
+.ypw-matrix-filters,
+.ypw-page-group-head,
+.ypw-group-bulk,
+.ypw-perm-block-head,
+.ypw-bulk-bar,
+.ypw-user-role-change,
+.ypw-selection-status,
+.ypw-summary-who,
+.ypw-footer,
+.ypw-user-table-head,
+.ypw-sprow-badges {
+    display: flex;
+    align-items: center;
+}
+
+    .ypw-role-tile em,
+    .ypw-role-badge,
+    .ypw-summary-role-badge,
+    .ypw-uitem-special,
+    .ypw-page-group-head span,
+    .ypw-sprow-badges em {
+        font-style: normal;
+        border: 1px solid var(--ypw-border-strong) !important;
+        background: #f9fafb !important;
+        color: #374151 !important;
+        border-radius: 999px;
+        font-weight: 800;
+    }
+
+    .ypw-user-table-head strong,
+    .ypw-summary-pages h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 850;
+    }
+
+.ypw-uitem-av,
+.ypw-summary-who-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: #f3f4f6 !important;
+    color: var(--ypw-text) !important;
+    border: 1px solid var(--ypw-border-strong) !important;
+    font-size: 13px;
+    font-weight: 900;
+    flex-shrink: 0;
+}
+
+.ypw-user-table-main,
+.ypw-page-row-info,
+.ypw-sprow-info {
+    min-width: 0;
+}
+
+    .ypw-user-table-main strong,
+    .ypw-user-table-main small,
+    .ypw-user-table-dept,
+    .ypw-page-row-info strong,
+    .ypw-page-row-info code,
+    .ypw-sprow-info strong,
+    .ypw-sprow-info code {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+.ypw-role-badge,
+.ypw-summary-role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.ypw-summary-who {
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.ypw-summary-role-badge {
+    margin-left: auto;
+}
+
+.ypw-page-row-info code,
+.ypw-sprow-info code {
+    display: inline-block;
+    max-width: 100%;
+    margin-top: 3px;
+    padding: 3px 7px;
+    background: #f9fafb;
+    border: 1px solid var(--ypw-border);
+    border-radius: 7px;
+    color: var(--ypw-muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+}
+
+.ypw-summary-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.ypw-stat-card {
+    padding: 16px;
+    display: grid;
+    gap: 5px;
+}
+
+    .ypw-stat-card i {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        background: #f3f4f6;
+        display: grid;
+        place-items: center;
+        color: var(--ypw-text);
+        font-size: 20px;
+    }
+
+    .ypw-stat-card strong {
+        font-size: 24px;
+        font-weight: 900;
+        color: var(--ypw-text);
+    }
+
+    .ypw-stat-card span,
+    .ypw-stat-card small {
+        color: var(--ypw-muted);
+        font-weight: 750;
+    }
+
+.ypw-role-perm-card {
+    border: 1px solid var(--ypw-border);
+    border-radius: 14px;
+    background: #fff;
+}
+
+    .ypw-role-perm-card .ypw-role-badge {
+        margin-bottom: 10px;
+    }
+
+.ypw-summary-pages {
+    overflow: hidden;
+}
+
+    .ypw-summary-pages h3 {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--ypw-border);
+    }
+
+.ypw-summary-page-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.ypw-summary-page-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 20px;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 0;
+    border-bottom: 1px solid #f0f2f5;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+}
+
+    .ypw-summary-page-row:hover {
+        background: var(--ypw-row);
+    }
+
+.ypw-sprow-badges {
+    gap: 6px;
+}
+
+    .ypw-sprow-badges em {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 8px;
+        font-size: 11.5px;
+    }
+
+.ypw-sprow-go {
+    color: var(--ypw-soft);
+}

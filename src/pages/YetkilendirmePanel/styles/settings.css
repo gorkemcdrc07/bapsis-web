@@ -1,0 +1,82 @@
+﻿.ypw-role-tile:hover,
+.ypw-user-table-card:hover,
+.ypw-user-detail-card:hover,
+.ypw-page-card:hover,
+.ypw-setting-card:hover,
+.ypw-stat-card:hover,
+.ypw-role-perm-card:hover {
+    border-color: var(--ypw-border-strong);
+    box-shadow: var(--ypw-card-shadow);
+}
+
+.ypw-user-table-card,
+.ypw-user-detail-card,
+.ypw-summary-pages,
+.ypw-settings-grid .ypw-setting-card,
+.ypw-page-card,
+.ypw-stat-card,
+.ypw-role-perm-card,
+.ypw-empty-state,
+.ypw-user-panel {
+    border: 1px solid var(--ypw-border);
+    border-radius: 14px;
+    background: #fff;
+}
+
+    .ypw-user-table-main strong,
+    .ypw-user-item strong,
+    .ypw-summary-who strong,
+    .ypw-page-row-info strong,
+    .ypw-sprow-info strong,
+    .ypw-setting-card strong,
+    .ypw-empty-state strong,
+    .ypw-role-perm-card strong {
+        display: block;
+        color: var(--ypw-text);
+        font-weight: 850;
+    }
+
+    .ypw-user-table-main small,
+    .ypw-user-item small,
+    .ypw-summary-who span,
+    .ypw-setting-card span,
+    .ypw-role-perm-card small,
+    .ypw-empty-state span {
+        display: block;
+        margin-top: 2px;
+        color: var(--ypw-muted);
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+.ypw-role-perm-grid,
+.ypw-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.ypw-role-perm-card,
+.ypw-setting-card {
+    padding: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.16s ease;
+}
+
+.ypw-settings-grid .ypw-setting-card {
+    display: grid;
+    gap: 8px;
+    min-height: 126px;
+}
+
+.ypw-setting-card i {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #f3f4f6;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+}

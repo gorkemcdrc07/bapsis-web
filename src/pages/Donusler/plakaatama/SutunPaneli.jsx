@@ -10,47 +10,57 @@
     if (!showColumnPanel) return null;
 
     return (
-        <div className="dpa-column-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="dpa-column-panel-head">
-                <div>
-                    <strong>Sütun görünürlüğü</strong>
-                    <span>{visibleColumns.length - 1} sütun açık</span>
+        <>
+            <div className="dpa-column-drawer-backdrop" />
+
+            <aside className="dpa-column-drawer" onClick={(e) => e.stopPropagation()}>
+                <div className="dpa-column-drawer-head">
+                    <div>
+                        <strong>Sütun Ayarları</strong>
+                        <span>Görünen sütunları düzenleyin.</span>
+                    </div>
+
+                    <div className="dpa-drawer-count">
+                        {visibleColumns.length - 1} açık
+                    </div>
                 </div>
 
-                <small>
-                    {hiddenColumns.length} gizli
-                </small>
-            </div>
+                <div className="dpa-drawer-search-wrap">
+                    <input
+                        className="dpa-column-search drawer"
+                        value={columnSearch}
+                        onChange={(e) => setColumnSearch(e.target.value)}
+                        placeholder="Sütun ara..."
+                    />
+                    <span>⌕</span>
+                </div>
 
-            <input
-                className="dpa-column-search"
-                value={columnSearch}
-                onChange={(e) => setColumnSearch(e.target.value)}
-                placeholder="Sütun ara..."
-            />
+                <div className="dpa-column-drawer-section-title">
+                    Sütunlar
+                    <small>{hiddenColumns.length} gizli</small>
+                </div>
 
-            <div className="dpa-column-chip-grid">
-                {filteredColumnList.map((column) => {
-                    const visible = !hiddenColumns.includes(column.key);
+                <div className="dpa-column-drawer-list">
+                    {filteredColumnList.map((column) => {
+                        const visible = !hiddenColumns.includes(column.key);
 
-                    return (
-                        <button
-                            type="button"
-                            key={column.key}
-                            className={
-                                visible
-                                    ? "dpa-column-chip visible"
-                                    : "dpa-column-chip hidden"
-                            }
-                            onClick={() => toggleColumn(column.key)}
-                        >
-                            <span className="dpa-column-dot" />
-                            <span>{column.label}</span>
-                            <small>{visible ? "Açık" : "Gizli"}</small>
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
+                        return (
+                            <button
+                                type="button"
+                                key={column.key}
+                                className={visible ? "dpa-drawer-column visible" : "dpa-drawer-column hidden"}
+                                onClick={() => toggleColumn(column.key)}
+                            >
+                                <span className="dpa-drag-mark">⋮⋮</span>
+                                <span className="dpa-drawer-column-name">{column.label}</span>
+                                <span className={visible ? "dpa-check on" : "dpa-check"}>
+                                    {visible ? "✓" : ""}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </aside>
+        </>
     );
 }
