@@ -117,7 +117,12 @@ export default function usePermissions({
         if (!roleError && roleData) {
             const next = { ...defaultRoles };
 
-            roleData.forEach((row: any) => {
+            type RolePermissionRow = {
+                role_key: string;
+                perms: RolPerms;
+            };
+
+            roleData.forEach((row: RolePermissionRow) => {
                 const key = normalizeRole(row.role_key);
                 next[key] = mergeWithPageDefinitions(row.perms, key);
             });
@@ -242,7 +247,7 @@ export default function usePermissions({
             ...current,
             cols: {
                 ...current.cols,
-                [column]: !Boolean(current.cols[column]),
+                [column]: !current.cols[column],
             },
         });
     }
@@ -253,7 +258,7 @@ export default function usePermissions({
             ...current,
             btns: {
                 ...current.btns,
-                [button]: !Boolean(current.btns[button]),
+                [button]: !current.btns[button],
             },
         });
     }

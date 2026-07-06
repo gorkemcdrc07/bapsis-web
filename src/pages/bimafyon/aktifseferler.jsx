@@ -190,9 +190,30 @@ export default function AktifSeferler() {
     const fileDragDepthRef = useRef(0);
     const editingStartValuesRef = useRef({});
 
-    const visibleColumns = columns.filter((c) => !hiddenColumns.includes(c.key));
-    const hideableColumns = columns.filter((c) => c.key !== "actions");
+    const permissions = JSON.parse(
+        localStorage.getItem("permissions") || "[]"
+    );
 
+    function hasPermission(key) {
+        return permissions.some(
+            (p) => String(p).trim().toLowerCase() === key.trim().toLowerCase()
+        );
+    }
+
+    const visibleColumns = columns.filter((column) => {
+        if (hiddenColumns.includes(column.key)) return false;
+
+        // actions sütunu için
+        if (column.key === "actions") {
+            return hasPermission("aktif_seferler.button.actions");
+        }
+
+        return hasPermission(`aktif_seferler.column.${column.key}`);
+    });
+    const hideableColumns = columns.filter((column) => {
+        if (column.key === "actions") return false;
+        return hasPermission(`aktif_seferler.column.${column.key}`);
+    });
     const filteredRows = useMemo(() => {
         const deviceMap = new Map(
             freshlianceDevices.map((device) => [
@@ -508,6 +529,8 @@ export default function AktifSeferler() {
         if (shouldAskCompletion) askCompletionIfReady(updatedRow);
     }
     function updateCell(rowIndex, key, value) {
+        if (!hasPermission(`aktif_seferler.column.${key}`)) return;
+
         const currentRow = filteredRows[rowIndex];
         if (!currentRow?.id) return;
 
@@ -533,6 +556,12 @@ export default function AktifSeferler() {
         );
     }
     async function saveCellOnBlur(rowId, key, value) {
+        if (!hasPermission(`aktif_seferler.column.${key}`)) {
+            alert("Bu sütunu düzenleme yetkiniz yok.");
+            await fetchAktifSeferler();
+            return;
+        }
+
         await hucreBlurKaydet({
             rowId,
             key,
@@ -668,6 +697,12 @@ export default function AktifSeferler() {
         }
     }
     async function handleExcelImport(event) {
+        if (!hasPermission("aktif_seferler.button.import_excel")) {
+            alert("Bu işlem için yetkiniz yok.");
+            event.target.value = "";
+            return;
+        }
+
         await excelDosyasiSecildi(event, processExcelFile);
     }
     function handlePageDragEnter(event) {
@@ -686,6 +721,11 @@ export default function AktifSeferler() {
         await sayfaDrop(event, fileDragDepthRef, setIsDragActive, processExcelFile);
     }
     async function exportExcel() {
+        if (!hasPermission("aktif_seferler.button.export_excel")) {
+            alert("Bu işlem için yetkiniz yok.");
+            return;
+        }
+
         await exportAktifSeferExcel(rows, araclar);
     }
     function closeActionMenu() {
@@ -721,6 +761,10 @@ export default function AktifSeferler() {
     }
 
     async function bulkCompleteTrips() {
+        if (!hasPermission("aktif_seferler.button.bulk_complete")) {
+            alert("Bu işlem için yetkiniz yok.");
+            return;
+        }
         if (selectedRows.length === 0) {
             setBulkResultModal({
                 type: "warning",
@@ -978,6 +1022,14 @@ export default function AktifSeferler() {
         kolonSuruklemeBitir(setDraggingColumnKey, setDropTargetColumnKey);
     }
     function renderCell(row, rowIndex, column) {
+        if (column.key !== "actions" && !hasPermission(`aktif_seferler.column.${column.key}`)) {
+            return null;
+        }
+
+        if (column.key === "actions" && !hasPermission("aktif_seferler.button.actions")) {
+            return null;
+        }
+
         return renderAktifSeferHucre({
             row,
             rowIndex,
@@ -1028,8 +1080,13 @@ export default function AktifSeferler() {
                     bulkCompleting={bulkCompleting}
                     onBulkComplete={bulkCompleteTrips}
                     resetColumnView={resetColumnView}
-                />
 
+                    canExportExcel={hasPermission("aktif_seferler.button.export_excel")}
+                    canImportExcel={hasPermission("aktif_seferler.button.import_excel")}
+                    canOpenIrsaliye={hasPermission("aktif_seferler.button.irsaliye")}
+                    canBulkComplete={hasPermission("aktif_seferler.button.bulk_complete")}
+                    canViewSettings={hasPermission("aktif_seferler.button.view_settings")}
+                />
                 <SutunPaneli
                     showColumnPanel={showColumnPanel}
                     visibleColumns={visibleColumns}
@@ -1420,6 +1477,9 @@ export default function AktifSeferler() {
                 araclar={araclar}
                 fetchAraclar={fetchAraclar}
                 updateLocalRowVkn={updateLocalRowVkn}
+                canSelectVehicle={hasPermission("aktif_seferler.button.select_vehicle")}
+                canUpdateVkn={hasPermission("aktif_seferler.button.update_vkn")}
+                canDelete={hasPermission("aktif_seferler.button.delete")}
             />
         </div>
     );
