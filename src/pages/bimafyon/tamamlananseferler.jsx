@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
-import { BUTTONS, COLUMNS, PAGE_KEY } from "./TamamlananSeferler.constants";
+import { BUTTONS, COLUMNS, PAGE_KEY } from "./Tamamlananseferler.constants";
 import "./tamamlananseferler.css";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
