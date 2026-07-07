@@ -1,5 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../context/AuthContext";
+import { BUTTONS, COLUMNS, PAGE_KEY } from "./TamamlananSeferler.constants";
 import "./tamamlananseferler.css";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -11,8 +13,6 @@ const SORT_OPTIONS = [
     { value: "id_asc", label: "Eski ID (Artan)" },
 ];
 
-const BADGE_PALETTE = ["badge-green", "badge-teal", "badge-blue", "badge-amber", "badge-violet"];
-
 export default function TamamlananSeferler() {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -23,11 +23,26 @@ export default function TamamlananSeferler() {
     const [sortBy, setSortBy] = useState("date_desc");
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
-    const [selectedRow, setSelectedRow] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
 
+    // ---------- Yetki ----------
+    const { canPage, canButton, canColumn } = useAuth();
+
+    const canViewPage = canPage(PAGE_KEY);
+    const canRefresh = canButton(PAGE_KEY, BUTTONS.REFRESH);
+    const canExportCsv = canButton(PAGE_KEY, BUTTONS.EXPORT_EXCEL);
+    const canCopyJson = canButton(PAGE_KEY, BUTTONS.COPY_JSON);
+
+    // Sadece yetkili olunan sütunlar tabloya render edilir.
+    const visibleColumns = useMemo(
+        () => COLUMNS.filter((column) => canColumn(PAGE_KEY, column.key)),
+        [canColumn]
+    );
+
     useEffect(() => {
+        if (!canViewPage) return;
         fetchCompletedTrips();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -50,6 +65,15 @@ export default function TamamlananSeferler() {
         }
 
         setRows(data || []);
+    }
+
+    // Buton gizlense bile fonksiyon elle çağrılsa çalışmaz.
+    function handleRefreshClick() {
+        if (!canRefresh) {
+            alert("Bu işlem için yetkiniz yok.");
+            return;
+        }
+        fetchCompletedTrips();
     }
 
     // ---------- Türetilmiş veriler ----------
@@ -191,15 +215,6 @@ export default function TamamlananSeferler() {
         setDateTo("");
     }
 
-    function reasonBadgeClass(reason) {
-        const text = reason || "Belirtilmemiş";
-        let hash = 0;
-        for (let i = 0; i < text.length; i += 1) {
-            hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
-        }
-        return BADGE_PALETTE[hash % BADGE_PALETTE.length];
-    }
-
     async function copyToClipboard(text, id) {
         try {
             await navigator.clipboard.writeText(text);
@@ -210,22 +225,68 @@ export default function TamamlananSeferler() {
         }
     }
 
+    // Satırdaki tüm veriyi JSON olarak kopyalar. Buton gizlense bile
+    // elle çağrılırsa yetki kontrolünden geçemez.
+    function handleCopyJson(item) {
+        if (!canCopyJson) {
+            alert("Bu işlem için yetkiniz yok.");
+            return;
+        }
+        copyToClipboard(JSON.stringify(item, null, 2), `json-${item.id}`);
+    }
+
+    // Bir sütunun değerini, seçilen COLUMNS[].key'e göre üretir.
+    function getColumnValue(item, key) {
+        const sefer = item.sefer_verisi || {};
+
+        switch (key) {
+            case "id":
+                return item.eski_sefer_id;
+            case "tamamlanma_nedeni":
+                return item.tamamlanma_nedeni || "Belirtilmemiş";
+            case "tamamlayan_kullanici_adi":
+                return item.tamamlayan_kullanici_adi || "—";
+            case "created_at":
+                return formatDate(item.created_at);
+            default:
+                return sefer[key] ?? "—";
+        }
+    }
+
+    function renderColumnCell(item, column) {
+        if (column.key === "id") {
+            return (
+                <button
+                    className="ct-id-chip"
+                    onClick={() => copyToClipboard(String(item.eski_sefer_id), item.id)}
+                    title="ID'yi kopyala"
+                >
+                    {copiedId === item.id ? "Kopyalandı ✓" : item.eski_sefer_id}
+                </button>
+            );
+        }
+
+        if (column.key === "tamamlanma_nedeni") {
+            return (
+                <span className="ct-pill">
+                    <span className="ct-pill-dot" />
+                    {getColumnValue(item, column.key)}
+                </span>
+            );
+        }
+
+        return getColumnValue(item, column.key);
+    }
+
     function exportToCsv() {
+        if (!canExportCsv) {
+            alert("Bu işlem için yetkiniz yok.");
+            return;
+        }
+
         if (sortedRows.length === 0) return;
 
-        const headers = [
-            "Eski ID",
-            "Sefer No",
-            "Çekici",
-            "Dorse",
-            "Sürücü",
-            "Telefon",
-            "Varış",
-            "İrsaliye",
-            "Tamamlanma Nedeni",
-            "Tamamlayan",
-            "Tarih",
-        ];
+        const headers = visibleColumns.map((column) => column.label);
 
         const escape = (val) => {
             const str = String(val ?? "—").replace(/"/g, '""');
@@ -233,21 +294,8 @@ export default function TamamlananSeferler() {
         };
 
         const lines = sortedRows.map((item) => {
-            const sefer = item.sefer_verisi || {};
-            return [
-                item.eski_sefer_id,
-                sefer.seferNo,
-                sefer.cekici,
-                sefer.dorse,
-                sefer.surucu,
-                sefer.telefon,
-                sefer.varis1,
-                sefer.irsaliyeNo,
-                item.tamamlanma_nedeni,
-                item.tamamlayan_kullanici_adi,
-                formatDate(item.created_at),
-            ]
-                .map(escape)
+            return visibleColumns
+                .map((column) => escape(getColumnValue(item, column.key)))
                 .join(",");
         });
 
@@ -266,58 +314,80 @@ export default function TamamlananSeferler() {
 
     // ---------- Render ----------
 
+    if (!canViewPage) {
+        return (
+            <div className="ct-page">
+                <div className="ct-card ct-unauthorized">
+                    <span className="ct-eyebrow">
+                        <span className="ct-eyebrow-dot" />
+                        Erişim Reddedildi
+                    </span>
+                    <h2>Bu sayfayı görüntüleme yetkiniz yok</h2>
+                    <p>Erişim talep etmek için sistem yöneticinizle iletişime geçin.</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="completed-trips-page">
-            <div className="completed-trips-card">
-                <div className="completed-trips-header">
-                    <div>
-                        <span className="completed-eyebrow">Tamamlanan</span>
+        <div className="ct-page">
+            <div className="ct-card">
+                <div className="ct-header">
+                    <div className="ct-header-text">
+                        <span className="ct-eyebrow">
+                            <span className="ct-eyebrow-dot" />
+                            Arşiv · Tamamlanan
+                        </span>
                         <h2>Tamamlanan Seferler</h2>
-                        <p>Aktif listeden tamamlanarak arşive alınan seferler.</p>
+                        <p>Aktif listeden tamamlanarak arşive alınan seferlerin kaydı.</p>
                     </div>
 
-                    <div className="completed-actions">
-                        <button
-                            className="secondary-btn"
-                            onClick={exportToCsv}
-                            disabled={sortedRows.length === 0}
-                        >
-                            CSV Olarak İndir
-                        </button>
+                    <div className="ct-actions">
+                        {canExportCsv && (
+                            <button
+                                className="ct-btn ct-btn-outline"
+                                onClick={exportToCsv}
+                                disabled={sortedRows.length === 0}
+                            >
+                                CSV Olarak İndir
+                            </button>
+                        )}
 
-                        <button onClick={fetchCompletedTrips} disabled={loading}>
-                            {loading ? "Yükleniyor..." : "Yenile"}
-                        </button>
+                        {canRefresh && (
+                            <button className="ct-btn ct-btn-primary" onClick={handleRefreshClick} disabled={loading}>
+                                {loading ? "Yükleniyor..." : "Yenile"}
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                <div className="stats-grid">
-                    <div className="stat-card">
-                        <span className="stat-label">Toplam Kayıt</span>
-                        <span className="stat-value">{stats.total}</span>
+                <div className="ct-stats">
+                    <div className="ct-stat">
+                        <span className="ct-stat-label">Toplam Kayıt</span>
+                        <span className="ct-stat-value">{stats.total}</span>
                     </div>
-                    <div className="stat-card">
-                        <span className="stat-label">Bugün Tamamlanan</span>
-                        <span className="stat-value">{stats.today}</span>
+                    <div className="ct-stat">
+                        <span className="ct-stat-label">Bugün Tamamlanan</span>
+                        <span className="ct-stat-value">{stats.today}</span>
                     </div>
-                    <div className="stat-card">
-                        <span className="stat-label">Son 7 Gün</span>
-                        <span className="stat-value">{stats.last7Days}</span>
+                    <div className="ct-stat">
+                        <span className="ct-stat-label">Son 7 Gün</span>
+                        <span className="ct-stat-value">{stats.last7Days}</span>
                     </div>
-                    <div className="stat-card stat-card-wide">
-                        <span className="stat-label">En Çok Tamamlayan</span>
-                        <span className="stat-value stat-value-text">
+                    <div className="ct-stat ct-stat-wide">
+                        <span className="ct-stat-label">En Çok Tamamlayan</span>
+                        <span className="ct-stat-value ct-stat-value-text">
                             {stats.topUser}
                             {stats.topUserCount > 0 && (
-                                <span className="stat-value-sub"> · {stats.topUserCount} kayıt</span>
+                                <span className="ct-stat-sub"> · {stats.topUserCount} kayıt</span>
                             )}
                         </span>
                     </div>
                 </div>
 
-                <div className="filter-bar">
+                <div className="ct-filter-bar">
                     <input
-                        className="filter-search"
+                        className="ct-search"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Sefer, plaka, sürücü, irsaliye ara..."
@@ -332,14 +402,14 @@ export default function TamamlananSeferler() {
                         ))}
                     </select>
 
-                    <div className="filter-date-group">
+                    <div className="ct-date-group">
                         <input
                             type="date"
                             value={dateFrom}
                             onChange={(e) => setDateFrom(e.target.value)}
                             aria-label="Başlangıç tarihi"
                         />
-                        <span className="date-sep">–</span>
+                        <span className="ct-date-sep">–</span>
                         <input
                             type="date"
                             value={dateTo}
@@ -357,93 +427,79 @@ export default function TamamlananSeferler() {
                     </select>
 
                     {hasActiveFilters && (
-                        <button className="ghost-btn" onClick={resetFilters}>
+                        <button className="ct-btn-ghost" onClick={resetFilters}>
                             Filtreleri Temizle
                         </button>
                     )}
                 </div>
 
-                <div className="completed-count">
-                    {sortedRows.length}/{rows.length} kayıt
-                    {hasActiveFilters && " (filtrelenmiş)"}
+                <div className="ct-count-row">
+                    <span className="ct-count-badge">
+                        {sortedRows.length}/{rows.length} kayıt
+                        {hasActiveFilters && " · filtrelenmiş"}
+                    </span>
                 </div>
 
-                <div className="completed-table-wrapper">
-                    <table className="completed-table">
+                <div className="ct-table-wrapper">
+                    <table className="ct-table">
                         <thead>
                             <tr>
-                                <th>Eski ID</th>
-                                <th>Sefer No</th>
-                                <th>Çekici</th>
-                                <th>Dorse</th>
-                                <th>Sürücü</th>
-                                <th>Telefon</th>
-                                <th>Varış</th>
-                                <th>İrsaliye</th>
-                                <th>Neden</th>
-                                <th>Tamamlayan</th>
-                                <th>Tarih</th>
-                                <th>Detay</th>
+                                {visibleColumns.map((column, index) => (
+                                    <th
+                                        key={column.key}
+                                        className={index === 0 ? "ct-col-sticky" : undefined}
+                                    >
+                                        {column.label}
+                                    </th>
+                                ))}
+                                {canCopyJson && <th>Kayıt</th>}
                             </tr>
                         </thead>
 
                         <tbody>
                             {loading &&
                                 Array.from({ length: 6 }).map((_, i) => (
-                                    <tr key={`skeleton-${i}`} className="skeleton-row">
-                                        {Array.from({ length: 12 }).map((__, j) => (
+                                    <tr key={`skeleton-${i}`} className="ct-skeleton-row">
+                                        {Array.from({ length: visibleColumns.length + (canCopyJson ? 1 : 0) }).map((__, j) => (
                                             <td key={j}>
-                                                <span className="skeleton-bar" />
+                                                <span className="ct-skeleton-bar" />
                                             </td>
                                         ))}
                                     </tr>
                                 ))}
 
                             {!loading &&
-                                pagedRows.map((item) => {
-                                    const sefer = item.sefer_verisi || {};
+                                pagedRows.map((item) => (
+                                    <tr key={item.id}>
+                                        {visibleColumns.map((column, index) => (
+                                            <td
+                                                key={column.key}
+                                                className={index === 0 ? "ct-col-sticky" : undefined}
+                                            >
+                                                {renderColumnCell(item, column)}
+                                            </td>
+                                        ))}
 
-                                    return (
-                                        <tr key={item.id}>
+                                        {canCopyJson && (
                                             <td>
                                                 <button
-                                                    className="completed-id"
-                                                    onClick={() => copyToClipboard(String(item.eski_sefer_id), item.id)}
-                                                    title="ID'yi kopyala"
+                                                    className="ct-json-btn"
+                                                    onClick={() => handleCopyJson(item)}
                                                 >
-                                                    {copiedId === item.id ? "Kopyalandı ✓" : item.eski_sefer_id}
+                                                    {copiedId === `json-${item.id}` ? "Kopyalandı ✓" : "JSON Kopyala"}
                                                 </button>
                                             </td>
-                                            <td>{sefer.seferNo || "—"}</td>
-                                            <td>{sefer.cekici || "—"}</td>
-                                            <td>{sefer.dorse || "—"}</td>
-                                            <td>{sefer.surucu || "—"}</td>
-                                            <td>{sefer.telefon || "—"}</td>
-                                            <td>{sefer.varis1 || "—"}</td>
-                                            <td>{sefer.irsaliyeNo || "—"}</td>
-                                            <td>
-                                                <span className={`reason-badge ${reasonBadgeClass(item.tamamlanma_nedeni)}`}>
-                                                    {item.tamamlanma_nedeni || "Belirtilmemiş"}
-                                                </span>
-                                            </td>
-                                            <td>{item.tamamlayan_kullanici_adi || "—"}</td>
-                                            <td>{formatDate(item.created_at)}</td>
-                                            <td>
-                                                <button
-                                                    className="completed-detail-btn"
-                                                    onClick={() => setSelectedRow(item)}
-                                                >
-                                                    Aç
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                        )}
+                                    </tr>
+                                ))}
 
                             {!loading && sortedRows.length === 0 && (
                                 <tr>
-                                    <td colSpan="12" className="empty-cell">
-                                        <div className="empty-state">
+                                    <td
+                                        colSpan={visibleColumns.length + (canCopyJson ? 1 : 0)}
+                                        className="ct-empty-cell"
+                                    >
+                                        <div className="ct-empty-state">
                                             <strong>Kayıt bulunamadı</strong>
                                             <span>
                                                 {hasActiveFilters
@@ -459,8 +515,8 @@ export default function TamamlananSeferler() {
                 </div>
 
                 {sortedRows.length > 0 && (
-                    <div className="pagination">
-                        <div className="pagination-size">
+                    <div className="ct-pagination">
+                        <div className="ct-page-size">
                             <span>Sayfa başına:</span>
                             <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
                                 {PAGE_SIZE_OPTIONS.map((size) => (
@@ -471,14 +527,14 @@ export default function TamamlananSeferler() {
                             </select>
                         </div>
 
-                        <div className="pagination-controls">
+                        <div className="ct-page-controls">
                             <button
                                 disabled={currentPage <= 1}
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                             >
                                 ‹ Önceki
                             </button>
-                            <span className="pagination-status">
+                            <span className="ct-page-status">
                                 Sayfa {currentPage} / {totalPages}
                             </span>
                             <button
@@ -491,63 +547,6 @@ export default function TamamlananSeferler() {
                     </div>
                 )}
             </div>
-
-            {selectedRow && (
-                <div className="completed-modal-overlay" onClick={() => setSelectedRow(null)}>
-                    <div className="completed-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="completed-modal-header">
-                            <div>
-                                <span className="completed-eyebrow">Sefer Detayı</span>
-                                <h3>{selectedRow.sefer_verisi?.seferNo || "Sefer No yok"}</h3>
-                                <p>
-                                    <span className={`reason-badge ${reasonBadgeClass(selectedRow.tamamlanma_nedeni)}`}>
-                                        {selectedRow.tamamlanma_nedeni || "Tamamlandı"}
-                                    </span>
-                                    {" · "}
-                                    {formatDate(selectedRow.created_at)}
-                                </p>
-                            </div>
-
-                            <button onClick={() => setSelectedRow(null)}>×</button>
-                        </div>
-
-                        <div className="completed-summary">
-                            <div>
-                                <small>Çekici</small>
-                                <strong>{selectedRow.sefer_verisi?.cekici || "—"}</strong>
-                            </div>
-                            <div>
-                                <small>Sürücü</small>
-                                <strong>{selectedRow.sefer_verisi?.surucu || "—"}</strong>
-                            </div>
-                            <div>
-                                <small>Tamamlayan</small>
-                                <strong>{selectedRow.tamamlayan_kullanici_adi || "—"}</strong>
-                            </div>
-                        </div>
-
-                        <div className="completed-detail-grid">
-                            {Object.entries(selectedRow.sefer_verisi || {}).map(([key, value]) => (
-                                <div className="completed-detail-item" key={key}>
-                                    <small>{key}</small>
-                                    <strong>{String(value ?? "—")}</strong>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="completed-modal-footer">
-                            <button
-                                className="secondary-btn"
-                                onClick={() =>
-                                    copyToClipboard(JSON.stringify(selectedRow, null, 2), `modal-${selectedRow.id}`)
-                                }
-                            >
-                                {copiedId === `modal-${selectedRow.id}` ? "Kopyalandı ✓" : "Kaydı JSON Olarak Kopyala"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

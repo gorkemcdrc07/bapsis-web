@@ -277,13 +277,17 @@ export default function YetkilendirmePanel({ onClose }: YetkilendirmePanelProps)
                     rolPerms={rolPerms}
                     userPerms={userPerms}
                     getCurrentPerm={getCurrentPerm}
-                    selectRole={selectRole}
-                    setActiveTab={setActiveTab}
-                    setExpandedPageKey={setExpandedPageKey}
+                    users={users}
+                    userRoles={userRoles}
+                    selectedRole={selectedRole}
+                    selectedUserId={selectedUserId}
+                    setSelectedRole={setSelectedRole}
+                    setSelectedUserId={setSelectedUserId}
+                    selectedUser={selectedUser}
+                    subjectMeta={subjectMeta}
                 />
             );
         }
-
         if (activeTab === "loglar") return <LoglarTab />;
 
         return <AyarlarTab />;
@@ -297,7 +301,6 @@ export default function YetkilendirmePanel({ onClose }: YetkilendirmePanelProps)
                         <div className="ypw-brand-icon">
                             <i className="ti ti-shield-cog" />
                         </div>
-
                         <div>
                             <h1>Yetkilendirme Paneli</h1>
                         </div>
@@ -314,28 +317,16 @@ export default function YetkilendirmePanel({ onClose }: YetkilendirmePanelProps)
                         >
                             <span
                                 className="ypw-ctx-avatar"
-                                style={{
-                                    background: subjectMeta.color,
-                                    color: "#fff",
-                                }}
+                                style={{ background: subjectMeta.color, color: "#fff" }}
                             >
-                                {selectedUser ? (
-                                    initials(selectedUser.name)
-                                ) : (
-                                    <i className={`ti ${subjectMeta.icon}`} />
-                                )}
+                                {selectedUser ? initials(selectedUser.name) : <i className={`ti ${subjectMeta.icon}`} />}
                             </span>
 
                             <span className="ypw-ctx-name">
                                 {selectedUser ? selectedUser.name : subjectMeta.label}
                             </span>
 
-                            {locked && (
-                                <i
-                                    className="ti ti-lock ypw-ctx-lock"
-                                    title="Admin yetkileri kilitli"
-                                />
-                            )}
+                            {locked && <i className="ti ti-lock ypw-ctx-lock" title="Admin yetkileri kilitli" />}
                         </div>
 
                         <button
@@ -348,28 +339,8 @@ export default function YetkilendirmePanel({ onClose }: YetkilendirmePanelProps)
                             <i className="ti ti-refresh" />
                         </button>
 
-                        <button
-                            className="ypw-btn primary save"
-                            onClick={saveAll}
-                            disabled={saving || loading}
-                            type="button"
-                        >
-                            <i
-                                className={`ti ${saving
-                                        ? "ti-loader-2 ypw-spin"
-                                        : "ti-device-floppy"
-                                    }`}
-                            />
-                            {saving ? "Kaydediliyor…" : "Kaydet"}
-                        </button>
-
                         {onClose && (
-                            <button
-                                className="ypw-btn ghost icon"
-                                onClick={onClose}
-                                title="Kapat (Esc)"
-                                type="button"
-                            >
+                            <button className="ypw-btn ghost icon" onClick={onClose} title="Kapat (Esc)" type="button">
                                 <i className="ti ti-x" />
                             </button>
                         )}
@@ -380,8 +351,7 @@ export default function YetkilendirmePanel({ onClose }: YetkilendirmePanelProps)
                     {TABS.map((tab) => (
                         <button
                             key={tab.key}
-                            className={`ypw-tab ${activeTab === tab.key ? "active" : ""
-                                }`}
+                            className={`ypw-tab ${activeTab === tab.key ? "active" : ""}`}
                             onClick={() => setActiveTab(tab.key)}
                             type="button"
                         >
@@ -403,10 +373,7 @@ export default function YetkilendirmePanel({ onClose }: YetkilendirmePanelProps)
                 {!loading && (
                     <footer className="ypw-footer compact-footer">
                         <span className="ypw-footer-step">
-                            Aktif sekme:{" "}
-                            <strong>
-                                {TABS.find((tab) => tab.key === activeTab)?.label}
-                            </strong>
+                            Aktif sekme: <strong>{TABS.find((tab) => tab.key === activeTab)?.label}</strong>
                         </span>
 
                         <button
@@ -415,13 +382,8 @@ export default function YetkilendirmePanel({ onClose }: YetkilendirmePanelProps)
                             disabled={saving}
                             type="button"
                         >
-                            <i
-                                className={`ti ${saving
-                                        ? "ti-loader-2 ypw-spin"
-                                        : "ti-device-floppy"
-                                    }`}
-                            />
-                            {saving ? "Kaydediliyor…" : "Tümünü Kaydet"}
+                            <i className={`ti ${saving ? "ti-loader-2 ypw-spin" : "ti-device-floppy"}`} />
+                            {saving ? "Kaydediliyor…" : "Değişiklikleri Kaydet"}
                         </button>
                     </footer>
                 )}

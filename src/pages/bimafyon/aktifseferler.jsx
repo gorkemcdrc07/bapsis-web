@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import IrsaliyeOkutModal from "./aktifseferler/IrsaliyeOkutModal";
 import AracSecme from "./aktifseferler/aracsecme";
@@ -159,7 +160,7 @@ export default function AktifSeferler() {
     const [openActionRowId, setOpenActionRowId] = useState(null);
     const [actionMenuPosition, setActionMenuPosition] = useState(null);
 
-    const [hiddenColumns, setHiddenColumns] = useState(() => getInitialHiddenColumns());
+    const [hiddenColumns, setHiddenColumns] = useState([]);
     const [importSummary, setImportSummary] = useState(null);
     const [revisionChanges, setRevisionChanges] = useState([]);
     const [changedCells, setChangedCells] = useState({});
@@ -189,30 +190,31 @@ export default function AktifSeferler() {
     const ugramaSartlariRef = useRef([]);
     const fileDragDepthRef = useRef(0);
     const editingStartValuesRef = useRef({});
+    const { hasPermission } = useAuth();
+    console.log("permissions");
 
-    const permissions = JSON.parse(
-        localStorage.getItem("permissions") || "[]"
+    console.log(
+        columnsData.map(c => ({
+            key: c.key,
+            yetki: hasPermission(`bim_aktif.column.${c.key}`)
+        }))
     );
 
-    function hasPermission(key) {
-        return permissions.some(
-            (p) => String(p).trim().toLowerCase() === key.trim().toLowerCase()
-        );
-    }
+
 
     const visibleColumns = columns.filter((column) => {
         if (hiddenColumns.includes(column.key)) return false;
 
         // actions sütunu için
         if (column.key === "actions") {
-            return hasPermission("aktif_seferler.button.actions");
+            return hasPermission("bim_aktif.button.actions");
         }
 
-        return hasPermission(`aktif_seferler.column.${column.key}`);
+        return hasPermission(`bim_aktif.column.${column.key}`);
     });
     const hideableColumns = columns.filter((column) => {
         if (column.key === "actions") return false;
-        return hasPermission(`aktif_seferler.column.${column.key}`);
+        return hasPermission(`bim_aktif.column.${column.key}`);
     });
     const filteredRows = useMemo(() => {
         const deviceMap = new Map(
@@ -361,7 +363,7 @@ export default function AktifSeferler() {
                     key: column.key,
                     width: column.width,
                 })),
-                hiddenColumns,
+                hiddenColumns: [],
             })
         );
     }, [columns, hiddenColumns]);
@@ -529,7 +531,7 @@ export default function AktifSeferler() {
         if (shouldAskCompletion) askCompletionIfReady(updatedRow);
     }
     function updateCell(rowIndex, key, value) {
-        if (!hasPermission(`aktif_seferler.column.${key}`)) return;
+        if (!hasPermission(`bim_aktif.column.${key}`)) return;
 
         const currentRow = filteredRows[rowIndex];
         if (!currentRow?.id) return;
@@ -556,7 +558,7 @@ export default function AktifSeferler() {
         );
     }
     async function saveCellOnBlur(rowId, key, value) {
-        if (!hasPermission(`aktif_seferler.column.${key}`)) {
+        if (!hasPermission(`bim_aktif.column.${key}`)) {
             alert("Bu sütunu düzenleme yetkiniz yok.");
             await fetchAktifSeferler();
             return;
@@ -697,7 +699,7 @@ export default function AktifSeferler() {
         }
     }
     async function handleExcelImport(event) {
-        if (!hasPermission("aktif_seferler.button.import_excel")) {
+        if (!hasPermission("bim_aktif.button.import_excel")) {
             alert("Bu işlem için yetkiniz yok.");
             event.target.value = "";
             return;
@@ -721,7 +723,7 @@ export default function AktifSeferler() {
         await sayfaDrop(event, fileDragDepthRef, setIsDragActive, processExcelFile);
     }
     async function exportExcel() {
-        if (!hasPermission("aktif_seferler.button.export_excel")) {
+        if (!hasPermission("bim_aktif.button.export_excel")) {
             alert("Bu işlem için yetkiniz yok.");
             return;
         }
@@ -761,7 +763,7 @@ export default function AktifSeferler() {
     }
 
     async function bulkCompleteTrips() {
-        if (!hasPermission("aktif_seferler.button.bulk_complete")) {
+        if (!hasPermission("bim_aktif.button.bulk_complete")) {
             alert("Bu işlem için yetkiniz yok.");
             return;
         }
@@ -997,6 +999,7 @@ export default function AktifSeferler() {
     function resetColumnView() {
         localStorage.removeItem(COLUMN_VIEW_STORAGE_KEY);
         setColumns(columnsData);
+
         setHiddenColumns([]);
     }
     function startResize(event, key) {
@@ -1022,11 +1025,11 @@ export default function AktifSeferler() {
         kolonSuruklemeBitir(setDraggingColumnKey, setDropTargetColumnKey);
     }
     function renderCell(row, rowIndex, column) {
-        if (column.key !== "actions" && !hasPermission(`aktif_seferler.column.${column.key}`)) {
+        if (column.key !== "actions" && !hasPermission(`bim_aktif.column.${column.key}`)) {
             return null;
         }
 
-        if (column.key === "actions" && !hasPermission("aktif_seferler.button.actions")) {
+        if (column.key === "actions" && !hasPermission("bim_aktif.button.actions")) {
             return null;
         }
 
@@ -1081,11 +1084,11 @@ export default function AktifSeferler() {
                     onBulkComplete={bulkCompleteTrips}
                     resetColumnView={resetColumnView}
 
-                    canExportExcel={hasPermission("aktif_seferler.button.export_excel")}
-                    canImportExcel={hasPermission("aktif_seferler.button.import_excel")}
-                    canOpenIrsaliye={hasPermission("aktif_seferler.button.irsaliye")}
-                    canBulkComplete={hasPermission("aktif_seferler.button.bulk_complete")}
-                    canViewSettings={hasPermission("aktif_seferler.button.view_settings")}
+                    canExportExcel={hasPermission("bim_aktif.button.export_excel")}
+                    canImportExcel={hasPermission("bim_aktif.button.import_excel")}
+                    canOpenIrsaliye={hasPermission("bim_aktif.button.irsaliye")}
+                    canBulkComplete={hasPermission("bim_aktif.button.bulk_complete")}
+                    canViewSettings={hasPermission("bim_aktif.button.view_settings")}
                 />
                 <SutunPaneli
                     showColumnPanel={showColumnPanel}
@@ -1477,9 +1480,9 @@ export default function AktifSeferler() {
                 araclar={araclar}
                 fetchAraclar={fetchAraclar}
                 updateLocalRowVkn={updateLocalRowVkn}
-                canSelectVehicle={hasPermission("aktif_seferler.button.select_vehicle")}
-                canUpdateVkn={hasPermission("aktif_seferler.button.update_vkn")}
-                canDelete={hasPermission("aktif_seferler.button.delete")}
+                canSelectVehicle={hasPermission("bim_aktif.button.select_vehicle")}
+                canUpdateVkn={hasPermission("bim_aktif.button.update_vkn")}
+                canDelete={hasPermission("bim_aktif.button.delete")}
             />
         </div>
     );

@@ -1,5 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../context/AuthContext";
+import { BUTTONS, COLUMNS, PAGE_KEY } from "./silinenseferler.constants";
 import "./silinenseferler.css";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -11,9 +13,9 @@ const SORT_OPTIONS = [
     { value: "id_asc", label: "Eski ID (Artan)" },
 ];
 
-const BADGE_PALETTE = ["badge-blue", "badge-violet", "badge-amber", "badge-rose", "badge-teal"];
-
 export default function SilinenSeferler() {
+    const { canPage, canButton, canColumn } = useAuth();
+
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
@@ -23,12 +25,23 @@ export default function SilinenSeferler() {
     const [sortBy, setSortBy] = useState("date_desc");
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
-    const [selectedRow, setSelectedRow] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
 
+    const canViewPage = canPage(PAGE_KEY);
+    const canRefresh = canButton(PAGE_KEY, BUTTONS.REFRESH);
+    const canExportCsv = canButton(PAGE_KEY, BUTTONS.EXPORT_EXCEL);
+    const canCopyJson = canButton(PAGE_KEY, BUTTONS.COPY_JSON);
+
+    const visibleColumns = useMemo(
+        () => COLUMNS.filter((column) => canColumn(PAGE_KEY, column.key)),
+        [canColumn]
+    );
+
     useEffect(() => {
+        if (!canViewPage) return;
         fetchDeletedTrips();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [canViewPage]);
 
     useEffect(() => {
         setPage(1);
@@ -52,13 +65,22 @@ export default function SilinenSeferler() {
         setRows(data || []);
     }
 
-    // ---------- Türetilmiş veriler ----------
+    function handleRefreshClick() {
+        if (!canRefresh) {
+            alert("Bu işlem için yetkiniz yok.");
+            return;
+        }
+
+        fetchDeletedTrips();
+    }
 
     const reasonOptions = useMemo(() => {
         const set = new Set();
+
         rows.forEach((item) => {
             if (item.silinme_nedeni) set.add(item.silinme_nedeni);
         });
+
         return Array.from(set).sort((a, b) => a.localeCompare(b, "tr"));
     }, [rows]);
 
@@ -126,8 +148,14 @@ export default function SilinenSeferler() {
                 item.silen_kullanici_adi,
                 sefer.seferNo,
                 sefer.cekici,
+                sefer.dorse,
                 sefer.surucu,
+                sefer.telefon,
                 sefer.varis1,
+                sefer.varis2,
+                sefer.varis3,
+                sefer.varis4,
+                sefer.irsaliyeNo,
                 sefer.aracDurumu,
             ]
                 .join(" ")
@@ -167,10 +195,8 @@ export default function SilinenSeferler() {
     const hasActiveFilters =
         Boolean(search) || reasonFilter !== "all" || Boolean(dateFrom) || Boolean(dateTo);
 
-    // ---------- Yardımcılar ----------
-
     function formatDate(value) {
-        if (!value) return "-";
+        if (!value) return "—";
         return new Date(value).toLocaleString("tr-TR");
     }
 
@@ -179,15 +205,6 @@ export default function SilinenSeferler() {
         setReasonFilter("all");
         setDateFrom("");
         setDateTo("");
-    }
-
-    function reasonBadgeClass(reason) {
-        const text = reason || "Belirtilmemiş";
-        let hash = 0;
-        for (let i = 0; i < text.length; i += 1) {
-            hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
-        }
-        return BADGE_PALETTE[hash % BADGE_PALETTE.length];
     }
 
     async function copyToClipboard(text, id) {
@@ -200,45 +217,82 @@ export default function SilinenSeferler() {
         }
     }
 
+    function handleCopyJson(item) {
+        if (!canCopyJson) {
+            alert("Bu işlem için yetkiniz yok.");
+            return;
+        }
+
+        copyToClipboard(JSON.stringify(item, null, 2), `json-${item.id}`);
+    }
+
+    function getColumnValue(item, key) {
+        const sefer = item.sefer_verisi || {};
+
+        switch (key) {
+            case "id":
+                return item.eski_sefer_id;
+            case "silinme_nedeni":
+                return item.silinme_nedeni || "Belirtilmemiş";
+            case "silen_kullanici_adi":
+                return item.silen_kullanici_adi || "—";
+            case "created_at":
+                return formatDate(item.created_at);
+            default:
+                return sefer[key] ?? "—";
+        }
+    }
+
+    function renderColumnCell(item, column) {
+        if (column.key === "id") {
+            return (
+                <button
+                    className="dt-id-chip"
+                    onClick={() => copyToClipboard(String(item.eski_sefer_id), item.id)}
+                    title="ID'yi kopyala"
+                >
+                    {copiedId === item.id ? "Kopyalandı ✓" : item.eski_sefer_id}
+                </button>
+            );
+        }
+
+        if (column.key === "silinme_nedeni") {
+            return (
+                <span className="dt-pill">
+                    <span className="dt-pill-dot" />
+                    {getColumnValue(item, column.key)}
+                </span>
+            );
+        }
+
+        return getColumnValue(item, column.key);
+    }
+
     function exportToCsv() {
+        if (!canExportCsv) {
+            alert("Bu işlem için yetkiniz yok.");
+            return;
+        }
+
         if (sortedRows.length === 0) return;
 
-        const headers = [
-            "Eski ID",
-            "Sefer No",
-            "Çekici",
-            "Sürücü",
-            "Varış",
-            "Durum",
-            "Silinme Nedeni",
-            "Silen Kullanıcı",
-            "Tarih",
-        ];
+        const headers = visibleColumns.map((column) => column.label);
 
         const escape = (val) => {
-            const str = String(val ?? "-").replace(/"/g, '""');
+            const str = String(val ?? "—").replace(/"/g, '""');
             return `"${str}"`;
         };
 
         const lines = sortedRows.map((item) => {
-            const sefer = item.sefer_verisi || {};
-            return [
-                item.eski_sefer_id,
-                sefer.seferNo,
-                sefer.cekici,
-                sefer.surucu,
-                sefer.varis1,
-                sefer.aracDurumu,
-                item.silinme_nedeni,
-                item.silen_kullanici_adi,
-                formatDate(item.created_at),
-            ]
-                .map(escape)
+            return visibleColumns
+                .map((column) => escape(getColumnValue(item, column.key)))
                 .join(",");
         });
 
         const csvContent = [headers.map(escape).join(","), ...lines].join("\n");
-        const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+        const blob = new Blob(["\uFEFF" + csvContent], {
+            type: "text/csv;charset=utf-8;",
+        });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
 
@@ -250,66 +304,99 @@ export default function SilinenSeferler() {
         URL.revokeObjectURL(url);
     }
 
-    // ---------- Render ----------
+    if (!canViewPage) {
+        return (
+            <div className="dt-page">
+                <div className="dt-card dt-unauthorized">
+                    <span className="dt-eyebrow">
+                        <span className="dt-eyebrow-dot" />
+                        Erişim Reddedildi
+                    </span>
+                    <h2>Bu sayfayı görüntüleme yetkiniz yok</h2>
+                    <p>Erişim talep etmek için sistem yöneticinizle iletişime geçin.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="deleted-trips-page">
-            <div className="deleted-trips-card">
-                <div className="deleted-trips-header">
-                    <div>
-                        <span className="deleted-eyebrow">Arşiv</span>
+        <div className="dt-page">
+            <div className="dt-card">
+                <div className="dt-header">
+                    <div className="dt-header-text">
+                        <span className="dt-eyebrow">
+                            <span className="dt-eyebrow-dot" />
+                            Arşiv · Silinen
+                        </span>
                         <h2>Silinen Seferler</h2>
                         <p>Manuel veya Excel aktarımıyla silinen seferlerin arşiv kayıtları.</p>
                     </div>
 
-                    <div className="deleted-actions">
-                        <button
-                            className="secondary-btn"
-                            onClick={exportToCsv}
-                            disabled={sortedRows.length === 0}
-                        >
-                            CSV Olarak İndir
-                        </button>
+                    <div className="dt-actions">
+                        {canExportCsv && (
+                            <button
+                                className="dt-btn dt-btn-outline"
+                                onClick={exportToCsv}
+                                disabled={sortedRows.length === 0}
+                            >
+                                CSV Olarak İndir
+                            </button>
+                        )}
 
-                        <button onClick={fetchDeletedTrips} disabled={loading}>
-                            {loading ? "Yükleniyor..." : "Yenile"}
-                        </button>
+                        {canRefresh && (
+                            <button
+                                className="dt-btn dt-btn-primary"
+                                onClick={handleRefreshClick}
+                                disabled={loading}
+                            >
+                                {loading ? "Yükleniyor..." : "Yenile"}
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                <div className="stats-grid">
-                    <div className="stat-card">
-                        <span className="stat-label">Toplam Kayıt</span>
-                        <span className="stat-value">{stats.total}</span>
+                <div className="dt-stats">
+                    <div className="dt-stat">
+                        <span className="dt-stat-label">Toplam Kayıt</span>
+                        <span className="dt-stat-value">{stats.total}</span>
                     </div>
-                    <div className="stat-card">
-                        <span className="stat-label">Bugün Silinen</span>
-                        <span className="stat-value">{stats.today}</span>
+
+                    <div className="dt-stat">
+                        <span className="dt-stat-label">Bugün Silinen</span>
+                        <span className="dt-stat-value">{stats.today}</span>
                     </div>
-                    <div className="stat-card">
-                        <span className="stat-label">Bu Ay Silinen</span>
-                        <span className="stat-value">{stats.thisMonth}</span>
+
+                    <div className="dt-stat">
+                        <span className="dt-stat-label">Bu Ay Silinen</span>
+                        <span className="dt-stat-value">{stats.thisMonth}</span>
                     </div>
-                    <div className="stat-card stat-card-wide">
-                        <span className="stat-label">En Sık Silinme Nedeni</span>
-                        <span className="stat-value stat-value-text">
+
+                    <div className="dt-stat dt-stat-wide">
+                        <span className="dt-stat-label">En Sık Silinme Nedeni</span>
+                        <span className="dt-stat-value dt-stat-value-text">
                             {stats.topReason}
                             {stats.topReasonCount > 0 && (
-                                <span className="stat-value-sub"> · {stats.topReasonCount} kayıt</span>
+                                <span className="dt-stat-sub">
+                                    {" "}
+                                    · {stats.topReasonCount} kayıt
+                                </span>
                             )}
                         </span>
                     </div>
                 </div>
 
-                <div className="filter-bar">
+                <div className="dt-filter-bar">
                     <input
-                        className="filter-search"
+                        className="dt-search"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="ID, sefer, plaka, sürücü ara..."
                     />
 
-                    <select value={reasonFilter} onChange={(e) => setReasonFilter(e.target.value)}>
+                    <select
+                        value={reasonFilter}
+                        onChange={(e) => setReasonFilter(e.target.value)}
+                    >
                         <option value="all">Tüm Nedenler</option>
                         {reasonOptions.map((reason) => (
                             <option key={reason} value={reason}>
@@ -318,14 +405,14 @@ export default function SilinenSeferler() {
                         ))}
                     </select>
 
-                    <div className="filter-date-group">
+                    <div className="dt-date-group">
                         <input
                             type="date"
                             value={dateFrom}
                             onChange={(e) => setDateFrom(e.target.value)}
                             aria-label="Başlangıç tarihi"
                         />
-                        <span className="date-sep">–</span>
+                        <span className="dt-date-sep">–</span>
                         <input
                             type="date"
                             value={dateTo}
@@ -343,89 +430,84 @@ export default function SilinenSeferler() {
                     </select>
 
                     {hasActiveFilters && (
-                        <button className="ghost-btn" onClick={resetFilters}>
+                        <button className="dt-btn-ghost" onClick={resetFilters}>
                             Filtreleri Temizle
                         </button>
                     )}
                 </div>
 
-                <div className="deleted-count">
-                    {sortedRows.length}/{rows.length} kayıt
-                    {hasActiveFilters && " (filtrelenmiş)"}
+                <div className="dt-count-row">
+                    <span className="dt-count-badge">
+                        {sortedRows.length}/{rows.length} kayıt
+                        {hasActiveFilters && " · filtrelenmiş"}
+                    </span>
                 </div>
 
-                <div className="deleted-table-wrapper">
-                    <table className="deleted-table">
+                <div className="dt-table-wrapper">
+                    <table className="dt-table">
                         <thead>
                             <tr>
-                                <th>Eski ID</th>
-                                <th>Sefer No</th>
-                                <th>Çekici</th>
-                                <th>Sürücü</th>
-                                <th>Varış</th>
-                                <th>Durum</th>
-                                <th>Silinme Nedeni</th>
-                                <th>Silen Kullanıcı</th>
-                                <th>Tarih</th>
-                                <th>Detay</th>
+                                {visibleColumns.map((column, index) => (
+                                    <th
+                                        key={column.key}
+                                        className={index === 0 ? "dt-col-sticky" : undefined}
+                                    >
+                                        {column.label}
+                                    </th>
+                                ))}
+
+                                {canCopyJson && <th>Kayıt</th>}
                             </tr>
                         </thead>
 
                         <tbody>
                             {loading &&
                                 Array.from({ length: 6 }).map((_, i) => (
-                                    <tr key={`skeleton-${i}`} className="skeleton-row">
-                                        {Array.from({ length: 10 }).map((__, j) => (
+                                    <tr key={`skeleton-${i}`} className="dt-skeleton-row">
+                                        {Array.from({
+                                            length: visibleColumns.length + (canCopyJson ? 1 : 0),
+                                        }).map((__, j) => (
                                             <td key={j}>
-                                                <span className="skeleton-bar" />
+                                                <span className="dt-skeleton-bar" />
                                             </td>
                                         ))}
                                     </tr>
                                 ))}
 
                             {!loading &&
-                                pagedRows.map((item) => {
-                                    const sefer = item.sefer_verisi || {};
+                                pagedRows.map((item) => (
+                                    <tr key={item.id}>
+                                        {visibleColumns.map((column, index) => (
+                                            <td
+                                                key={column.key}
+                                                className={index === 0 ? "dt-col-sticky" : undefined}
+                                            >
+                                                {renderColumnCell(item, column)}
+                                            </td>
+                                        ))}
 
-                                    return (
-                                        <tr key={item.id}>
+                                        {canCopyJson && (
                                             <td>
                                                 <button
-                                                    className="deleted-id"
-                                                    onClick={() => copyToClipboard(String(item.eski_sefer_id), item.id)}
-                                                    title="ID'yi kopyala"
+                                                    className="dt-json-btn"
+                                                    onClick={() => handleCopyJson(item)}
                                                 >
-                                                    {copiedId === item.id ? "Kopyalandı ✓" : item.eski_sefer_id}
+                                                    {copiedId === `json-${item.id}`
+                                                        ? "Kopyalandı ✓"
+                                                        : "JSON Kopyala"}
                                                 </button>
                                             </td>
-                                            <td>{sefer.seferNo || "-"}</td>
-                                            <td>{sefer.cekici || "-"}</td>
-                                            <td>{sefer.surucu || "-"}</td>
-                                            <td>{sefer.varis1 || "-"}</td>
-                                            <td>{sefer.aracDurumu || "-"}</td>
-                                            <td>
-                                                <span className={`reason-badge ${reasonBadgeClass(item.silinme_nedeni)}`}>
-                                                    {item.silinme_nedeni || "Belirtilmemiş"}
-                                                </span>
-                                            </td>
-                                            <td>{item.silen_kullanici_adi || "-"}</td>
-                                            <td>{formatDate(item.created_at)}</td>
-                                            <td>
-                                                <button
-                                                    className="detail-btn"
-                                                    onClick={() => setSelectedRow(item)}
-                                                >
-                                                    Aç
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                        )}
+                                    </tr>
+                                ))}
 
                             {!loading && sortedRows.length === 0 && (
                                 <tr>
-                                    <td colSpan="10" className="empty-cell">
-                                        <div className="empty-state">
+                                    <td
+                                        colSpan={visibleColumns.length + (canCopyJson ? 1 : 0)}
+                                        className="dt-empty-cell"
+                                    >
+                                        <div className="dt-empty-state">
                                             <strong>Kayıt bulunamadı</strong>
                                             <span>
                                                 {hasActiveFilters
@@ -441,10 +523,13 @@ export default function SilinenSeferler() {
                 </div>
 
                 {sortedRows.length > 0 && (
-                    <div className="pagination">
-                        <div className="pagination-size">
+                    <div className="dt-pagination">
+                        <div className="dt-page-size">
                             <span>Sayfa başına:</span>
-                            <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+                            <select
+                                value={pageSize}
+                                onChange={(e) => setPageSize(Number(e.target.value))}
+                            >
                                 {PAGE_SIZE_OPTIONS.map((size) => (
                                     <option key={size} value={size}>
                                         {size}
@@ -453,16 +538,18 @@ export default function SilinenSeferler() {
                             </select>
                         </div>
 
-                        <div className="pagination-controls">
+                        <div className="dt-page-controls">
                             <button
                                 disabled={currentPage <= 1}
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                             >
                                 ‹ Önceki
                             </button>
-                            <span className="pagination-status">
+
+                            <span className="dt-page-status">
                                 Sayfa {currentPage} / {totalPages}
                             </span>
+
                             <button
                                 disabled={currentPage >= totalPages}
                                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -473,51 +560,6 @@ export default function SilinenSeferler() {
                     </div>
                 )}
             </div>
-
-            {selectedRow && (
-                <div className="deleted-modal-overlay" onClick={() => setSelectedRow(null)}>
-                    <div className="deleted-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="deleted-modal-header">
-                            <div>
-                                <span className="deleted-eyebrow">Silinen Sefer Detayı</span>
-                                <h3>ID #{selectedRow.eski_sefer_id}</h3>
-                                <p>
-                                    <span className={`reason-badge ${reasonBadgeClass(selectedRow.silinme_nedeni)}`}>
-                                        {selectedRow.silinme_nedeni || "Belirtilmemiş"}
-                                    </span>
-                                    {" · "}
-                                    {formatDate(selectedRow.created_at)}
-                                    {selectedRow.silen_kullanici_adi && (
-                                        <> · {selectedRow.silen_kullanici_adi}</>
-                                    )}
-                                </p>
-                            </div>
-
-                            <button onClick={() => setSelectedRow(null)}>×</button>
-                        </div>
-
-                        <div className="deleted-detail-grid">
-                            {Object.entries(selectedRow.sefer_verisi || {}).map(([key, value]) => (
-                                <div className="deleted-detail-item" key={key}>
-                                    <small>{key}</small>
-                                    <strong>{String(value ?? "-")}</strong>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="deleted-modal-footer">
-                            <button
-                                className="secondary-btn"
-                                onClick={() =>
-                                    copyToClipboard(JSON.stringify(selectedRow, null, 2), `modal-${selectedRow.id}`)
-                                }
-                            >
-                                {copiedId === `modal-${selectedRow.id}` ? "Kopyalandı ✓" : "Kaydı JSON Olarak Kopyala"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

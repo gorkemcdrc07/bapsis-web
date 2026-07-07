@@ -1,7 +1,7 @@
 export default function PlakaAtamaToolbar({
     loading,
-    rows,
-    filteredRows,
+    rows = [],
+    filteredRows = [],
     search,
     setSearch,
     statusFilter,
@@ -9,11 +9,17 @@ export default function PlakaAtamaToolbar({
     fetchRows,
     showColumnPanel,
     setShowColumnPanel,
-    visibleColumns,
+    visibleColumns = [],
     exportExcel,
     fileInputRef,
     excelImporting,
     setShowIrsaliyePanel,
+
+    canImportExcel = false,
+    canExportExcel = false,
+    canIrsaliye = false,
+    canViewSettings = false,
+    canRefresh = false,
 }) {
     return (
         <div className="dpa-modern-toolbar">
@@ -25,8 +31,13 @@ export default function PlakaAtamaToolbar({
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Sefer, plaka, sürücü ara..."
                 />
+
                 {search && (
-                    <button type="button" className="dpa-clear-search" onClick={() => setSearch("")}>
+                    <button
+                        type="button"
+                        className="dpa-clear-search"
+                        onClick={() => setSearch("")}
+                    >
                         ×
                     </button>
                 )}
@@ -48,38 +59,70 @@ export default function PlakaAtamaToolbar({
             </select>
 
             <div className="dpa-modern-actions">
-                <button type="button" className="dpa-icon-btn" onClick={() => setShowIrsaliyePanel(true)}>
-                    <span>▣</span>
-                    İrsaliye Oku
-                </button>
+                {canIrsaliye && (
+                    <button
+                        type="button"
+                        className="dpa-icon-btn"
+                        onClick={() => setShowIrsaliyePanel(true)}
+                    >
+                        <span>▣</span>
+                        İrsaliye Oku
+                    </button>
+                )}
 
-                <button type="button" className="dpa-icon-btn green" onClick={() => fileInputRef.current?.click()} disabled={excelImporting}>
-                    <span>▤</span>
-                    {excelImporting ? "Alınıyor..." : "Excel Al"}
-                </button>
+                {canImportExcel && (
+                    <button
+                        type="button"
+                        className="dpa-icon-btn green"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={excelImporting}
+                    >
+                        <span>▤</span>
+                        {excelImporting ? "Alınıyor..." : "Excel Al"}
+                    </button>
+                )}
 
-                <button type="button" className="dpa-icon-btn green-soft" onClick={exportExcel}>
-                    <span>▧</span>
-                    Excel’e Aktar
-                </button>
+                {canExportExcel && (
+                    <button
+                        type="button"
+                        className="dpa-icon-btn green-soft"
+                        onClick={exportExcel}
+                    >
+                        <span>▧</span>
+                        Excel’e Aktar
+                    </button>
+                )}
 
-                <button
-                    type="button"
-                    className={showColumnPanel ? "dpa-icon-btn blue active" : "dpa-icon-btn blue"}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setShowColumnPanel((prev) => !prev);
-                    }}
-                >
-                    <span>▥</span>
-                    Sütunlar
-                    <b>{visibleColumns.length - 1}</b>
-                </button>
+                {canViewSettings && (
+                    <button
+                        type="button"
+                        className={
+                            showColumnPanel
+                                ? "dpa-icon-btn blue active"
+                                : "dpa-icon-btn blue"
+                        }
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowColumnPanel((prev) => !prev);
+                        }}
+                    >
+                        <span>▥</span>
+                        Sütunlar
+                        <b>{Math.max(visibleColumns.length - 1, 0)}</b>
+                    </button>
+                )}
 
-                <button type="button" className="dpa-icon-btn" onClick={fetchRows} disabled={loading}>
-                    <span className={loading ? "spin" : ""}>↻</span>
-                    Yenile
-                </button>
+                {canRefresh && (
+                    <button
+                        type="button"
+                        className="dpa-icon-btn"
+                        onClick={fetchRows}
+                        disabled={loading}
+                    >
+                        <span className={loading ? "spin" : ""}>↻</span>
+                        Yenile
+                    </button>
+                )}
             </div>
 
             <div className="dpa-toolbar-count">

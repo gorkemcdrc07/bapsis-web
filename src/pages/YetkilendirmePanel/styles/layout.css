@@ -25,8 +25,8 @@
 }
 
 .ypw-header {
-    min-height: 68px;
-    padding: 0 18px;
+    min-height: 64px;
+    padding: 0 20px;
     background: var(--ypw-panel);
     border-bottom: 1px solid var(--ypw-border);
     display: flex;
@@ -42,19 +42,19 @@
 }
 
 .ypw-brand-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
     background: var(--ypw-dark);
     color: #fff;
     display: grid;
     place-items: center;
-    font-size: 20px;
+    font-size: 18px;
     flex-shrink: 0;
 }
 
 .ypw-brand h1 {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 800;
 }
 
@@ -80,7 +80,7 @@
     width: 30px;
     height: 30px;
     border-radius: 999px;
-    background: var(--ypw-dark) !important;
+    background: var(--ypw-primary) !important;
     color: #fff !important;
     display: grid;
     place-items: center;
@@ -102,6 +102,51 @@
     display: flex;
     flex-direction: column;
 }
+
+/* ---- Sekmeler: alt çizgili, kurumsal stil ---- */
+.ypw-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 20px;
+    background: var(--ypw-panel);
+    border-bottom: 1px solid var(--ypw-border);
+    flex-shrink: 0;
+    overflow-x: auto;
+}
+
+.ypw-tab {
+    height: 52px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--ypw-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: 0.14s ease;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 0 14px;
+    white-space: nowrap;
+}
+
+    .ypw-tab i {
+        font-size: 16px;
+    }
+
+    .ypw-tab:hover {
+        color: var(--ypw-text);
+    }
+
+    .ypw-tab.active {
+        color: var(--ypw-primary);
+        border-bottom-color: var(--ypw-primary);
+        font-weight: 800;
+    }
 
 .ypw-role-row {
     display: grid;
@@ -171,7 +216,7 @@
     justify-content: space-between;
     gap: 12px;
     min-height: 58px;
-    padding: 10px 18px;
+    padding: 10px 20px;
     background: var(--ypw-panel);
     border-top: 1px solid var(--ypw-border);
     flex-shrink: 0;
@@ -205,12 +250,12 @@
     width: fit-content;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 6px 10px;
+    gap: 8px;
+    padding: 7px 12px;
     border-radius: 999px;
-    background: rgba(37, 99, 235, 0.10);
-    color: #1d4ed8;
-    font-size: 12px;
+    background: var(--ypw-primary-soft);
+    color: var(--ypw-primary);
+    font-size: 12.5px;
     font-weight: 900;
 }
 
@@ -239,14 +284,6 @@
         flex-wrap: nowrap;
     }
 
-.ypw-kicker {
-    gap: 8px;
-    padding: 7px 12px;
-    background: #e9f0ff;
-    color: #2563eb;
-    font-size: 12.5px;
-}
-
 .ypw-dot {
     width: 8px;
     height: 8px;
@@ -270,8 +307,8 @@
     min-height: 30px;
     padding: 6px 10px;
     border-radius: 9px;
-    background: #eff6ff;
-    color: #1d4ed8;
+    background: var(--ypw-primary-soft);
+    color: var(--ypw-primary);
     font-size: 13px;
     font-weight: 950;
 }
@@ -290,14 +327,6 @@
         background: #fff7ed;
         color: #c2410c;
     }
-
-.ypw-row-actions.icon-only {
-    gap: 12px;
-}
-
-.ypw-row-actions.icon-only {
-    gap: 7px !important;
-}
 
 .ypw-delete-icon {
     width: 52px;

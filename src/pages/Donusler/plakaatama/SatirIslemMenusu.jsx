@@ -64,14 +64,28 @@ export default function SatirIslemMenusu({
     selectedActionRow,
     setAracPanelRow,
     deleteTrip,
+    completeTrip,
     araclar = [],
     fetchAraclar,
     updateLocalRowVkn,
     openMapForRow,
+
+    canSelectVehicle = false,
+    canChangeDriver = false,
+    canDeleteTrip = false,
+    canCompleteTrip = false,
+    canShowMap = false,
 }) {
     const [showVknModal, setShowVknModal] = useState(false);
     const [modalRow, setModalRow] = useState(null);
     const [selectedVkn, setSelectedVkn] = useState("");
+
+    const hasAnyMenuPermission =
+        canSelectVehicle ||
+        canChangeDriver ||
+        canDeleteTrip ||
+        canCompleteTrip ||
+        canShowMap;
 
     const vknOptions = useMemo(() => {
         return [
@@ -83,11 +97,17 @@ export default function SatirIslemMenusu({
         ];
     }, [araclar]);
 
+    if (!hasAnyMenuPermission && !showVknModal) {
+        return null;
+    }
+
     if ((!openActionRowId || !actionMenuPosition || !selectedActionRow) && !showVknModal) {
         return null;
     }
 
     function openVknModal() {
+        if (!canChangeDriver) return;
+
         setModalRow(selectedActionRow);
         setSelectedVkn(selectedActionRow.vkn ?? selectedActionRow.faturaVkn ?? "");
         setShowVknModal(true);
@@ -100,6 +120,11 @@ export default function SatirIslemMenusu({
     }
 
     async function saveVknChange(isPermanent) {
+        if (!canChangeDriver) {
+            alert("VKN değiştirme yetkiniz yok.");
+            return;
+        }
+
         if (!modalRow) return;
 
         if (!selectedVkn) {
@@ -172,44 +197,71 @@ export default function SatirIslemMenusu({
                         İşlemler
                     </div>
 
-                    <PopRow
-                        iconBg="#eff6ff"
-                        iconColor="#1d4ed8"
-                        icon="🚛"
-                        label="Araç değiştir"
-                        sublabel="Çekici / dorse ata"
-                        onClick={() => setAracPanelRow(selectedActionRow)}
-                    />
+                    {canSelectVehicle && (
+                        <PopRow
+                            iconBg="#eff6ff"
+                            iconColor="#1d4ed8"
+                            icon="🚛"
+                            label="Araç değiştir"
+                            sublabel="Çekici / dorse ata"
+                            onClick={() => setAracPanelRow?.(selectedActionRow)}
+                        />
+                    )}
 
-                    <PopRow
-                        iconBg="#ecfeff"
-                        iconColor="#0891b2"
-                        icon="🗺️"
-                        label="Harita"
-                        sublabel="Dataloger konumunu göster"
-                        onClick={() => openMapForRow?.(selectedActionRow)}
-                    />
+                    {canShowMap && (
+                        <PopRow
+                            iconBg="#ecfeff"
+                            iconColor="#0891b2"
+                            icon="🗺️"
+                            label="Harita"
+                            sublabel="Dataloger konumunu göster"
+                            onClick={() => openMapForRow?.(selectedActionRow)}
+                        />
+                    )}
 
-                    <PopRow
-                        iconBg="#fffbeb"
-                        iconColor="#b45309"
-                        icon="📄"
-                        label="VKN değiştir"
-                        sublabel="Temelli veya sefere özel"
-                        onClick={openVknModal}
-                    />
+                    {canChangeDriver && (
+                        <PopRow
+                            iconBg="#fffbeb"
+                            iconColor="#b45309"
+                            icon="📄"
+                            label="VKN değiştir"
+                            sublabel="Temelli veya sefere özel"
+                            onClick={openVknModal}
+                        />
+                    )}
 
-                    <div style={{ height: "0.5px", background: "#f1f5f9", margin: "3px 0" }} />
+                    {canCompleteTrip && (
+                        <PopRow
+                            iconBg="#ecfdf5"
+                            iconColor="#059669"
+                            icon="✓"
+                            label="Seferi tamamla"
+                            sublabel="Tamamlanan sefere aktar"
+                            onClick={() => completeTrip?.(selectedActionRow)}
+                        />
+                    )}
 
-                    <PopRow
-                        iconBg="#fef2f2"
-                        iconColor="#dc2626"
-                        icon="🗑️"
-                        label="Seferi sil"
-                        sublabel="Kaydı listeden kaldır"
-                        danger
-                        onClick={() => deleteTrip(selectedActionRow)}
-                    />
+                    {canDeleteTrip && (
+                        <>
+                            <div
+                                style={{
+                                    height: "0.5px",
+                                    background: "#f1f5f9",
+                                    margin: "3px 0",
+                                }}
+                            />
+
+                            <PopRow
+                                iconBg="#fef2f2"
+                                iconColor="#dc2626"
+                                icon="🗑️"
+                                label="Seferi sil"
+                                sublabel="Kaydı listeden kaldır"
+                                danger
+                                onClick={() => deleteTrip?.(selectedActionRow)}
+                            />
+                        </>
+                    )}
                 </div>
             )}
 
@@ -348,6 +400,7 @@ export default function SatirIslemMenusu({
                                     }}
                                 >
                                     <option value="">— VKN seçin —</option>
+
                                     {vknOptions.map((vkn) => (
                                         <option key={vkn} value={vkn}>
                                             {vkn}

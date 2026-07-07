@@ -34,6 +34,8 @@ import {
     saveRolePermissions,
 } from "../services/roleService";
 
+import { useAuth } from "../../../context/AuthContext";
+
 type ToastType = "success" | "error" | "info";
 
 interface UsePermissionsProps {
@@ -87,8 +89,11 @@ export default function usePermissions({
     setSaving,
     showToast,
 }: UsePermissionsProps) {
+    const { refreshAuth } = useAuth();
+
     async function fetchData() {
         setLoading(true);
+
         const defaultRoles = buildDefaultAllRolPerms();
 
         const { data: userData, error: userError } = await getUsers();
@@ -182,6 +187,8 @@ export default function usePermissions({
             return;
         }
 
+        await refreshAuth();
+
         showToast("Yetkiler başarıyla kaydedildi.", "success");
         setSaving(false);
     }
@@ -243,6 +250,7 @@ export default function usePermissions({
 
     function toggleColumn(pageKey: string, column: string) {
         const current = getCurrentPerm(pageKey);
+
         updatePagePerm(pageKey, {
             ...current,
             cols: {
@@ -254,6 +262,7 @@ export default function usePermissions({
 
     function toggleButton(pageKey: string, button: string) {
         const current = getCurrentPerm(pageKey);
+
         updatePagePerm(pageKey, {
             ...current,
             btns: {
@@ -268,6 +277,7 @@ export default function usePermissions({
         if (!page) return;
 
         const current = getCurrentPerm(pageKey);
+
         updatePagePerm(pageKey, {
             ...current,
             cols: Object.fromEntries(page.columns.map((column) => [column, value])),
@@ -279,6 +289,7 @@ export default function usePermissions({
         if (!page) return;
 
         const current = getCurrentPerm(pageKey);
+
         updatePagePerm(pageKey, {
             ...current,
             btns: Object.fromEntries(page.buttons.map((button) => [button, value])),
@@ -308,16 +319,14 @@ export default function usePermissions({
         const activeColumns = PAGES.reduce(
             (total, page) =>
                 total +
-                page.columns.filter((column) => getCurrentPerm(page.key).cols[column])
-                    .length,
+                page.columns.filter((column) => getCurrentPerm(page.key).cols[column]).length,
             0
         );
 
         const activeButtons = PAGES.reduce(
             (total, page) =>
                 total +
-                page.buttons.filter((button) => getCurrentPerm(page.key).btns[button])
-                    .length,
+                page.buttons.filter((button) => getCurrentPerm(page.key).btns[button]).length,
             0
         );
 

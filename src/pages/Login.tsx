@@ -1,10 +1,183 @@
 ﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../context/AuthContext";
+import { logKaydet } from "../lib/logger";
 import "./Login.css";
+
+const BIM_AKTIF_COLUMN_MAP = {
+    ID: "id",
+    "Sefer No": "seferNo",
+    "Sevk Tarihi": "sevkTarihi",
+    "Yükleyen Depo": "yukleyenDepo",
+    "Kalkış Yeri": "kalkisYeri",
+    "Araç Cinsi": "aracCinsi",
+    Çekici: "cekici",
+    Dorse: "dorse",
+    TC: "tc",
+    Sürücü: "surucu",
+    Telefon: "telefon",
+    VKN: "faturaVkn",
+    "Varış 1": "varis1",
+    "Varış 2": "varis2",
+    "Varış 3": "varis3",
+    "Varış 4": "varis4",
+    Palet: "palet",
+    İrsaliye: "irsaliyeNo",
+    "Dataloger No": "datalogerNo",
+    Batarya: "freshlianceBattery",
+    Konum: "freshlianceLocation",
+    "Son Veri": "freshlianceUpdatedAt",
+    Sıcaklık: "freshlianceTemperature",
+    Navlun: "navlun",
+    "Araç Durumu": "aracDurumu",
+    "Peron No": "peronNo",
+};
+
+const BIM_AKTIF_BUTTON_MAP = {
+    "Excel Aktar": "export_excel",
+    "Excel İçe Aktar": "import_excel",
+    "İrsaliye Okut": "irsaliye",
+    "Toplu Sefer Tamamla": "bulk_complete",
+    "Sütun Ayarları": "view_settings",
+    "Görünüm Kaydet": "view_settings",
+    "Sefer Sil": "delete",
+    "Araç Seç": "select_vehicle",
+    "Şoför Değiştir": "update_vkn",
+    "Sefer Tamamla": "bulk_complete",
+    "Navlun Eşleştir": "actions",
+    "Haritada Göster": "actions",
+};
+
+const BIM_TAMAMLANAN_COLUMN_MAP = {
+    "Eski ID": "id",
+    "Sefer No": "seferNo",
+    Çekici: "cekici",
+    Dorse: "dorse",
+    Sürücü: "surucu",
+    Telefon: "telefon",
+    "Varış 1": "varis1",
+    "Varış 2": "varis2",
+    "Varış 3": "varis3",
+    "Varış 4": "varis4",
+    İrsaliye: "irsaliyeNo",
+    Neden: "tamamlanma_nedeni",
+    Tamamlayan: "tamamlayan_kullanici_adi",
+    Tarih: "created_at",
+};
+
+const BIM_TAMAMLANAN_BUTTON_MAP = {
+    Yenile: "refresh",
+    "CSV Olarak İndir": "export_excel",
+    "JSON Kopyala": "copy_json",
+};
+
+const BIM_SILINEN_COLUMN_MAP = {
+    "Eski ID": "id",
+    "Sefer No": "seferNo",
+    Çekici: "cekici",
+    Dorse: "dorse",
+    Sürücü: "surucu",
+    Telefon: "telefon",
+    "Varış 1": "varis1",
+    "Varış 2": "varis2",
+    "Varış 3": "varis3",
+    "Varış 4": "varis4",
+    İrsaliye: "irsaliyeNo",
+    "Araç Durumu": "aracDurumu",
+    "Silinme Nedeni": "silinme_nedeni",
+    "Silen Kullanıcı": "silen_kullanici_adi",
+    Tarih: "created_at",
+};
+
+const BIM_SILINEN_BUTTON_MAP = {
+    Yenile: "refresh",
+    "CSV Olarak İndir": "export_excel",
+    "JSON Kopyala": "copy_json",
+};
+
+function mapPageKey(pageKey: string) {
+    if (pageKey === "bim_aktif") return "aktif_seferler";
+    if (pageKey === "bim_tamamlanan") return "tamamlanan_seferler";
+    if (pageKey === "bim_silinen") return "silinen_seferler";
+    return pageKey;
+}
+
+function mapColumnKey(pageKey: string, colKey: string) {
+    if (pageKey === "bim_aktif") {
+        return BIM_AKTIF_COLUMN_MAP[colKey as keyof typeof BIM_AKTIF_COLUMN_MAP] || colKey;
+    }
+
+    if (pageKey === "bim_tamamlanan") {
+        return (
+            BIM_TAMAMLANAN_COLUMN_MAP[colKey as keyof typeof BIM_TAMAMLANAN_COLUMN_MAP] || colKey
+        );
+    }
+
+    if (pageKey === "bim_silinen") {
+        return BIM_SILINEN_COLUMN_MAP[colKey as keyof typeof BIM_SILINEN_COLUMN_MAP] || colKey;
+    }
+
+    return colKey;
+}
+
+function mapButtonKey(pageKey: string, btnKey: string) {
+    if (pageKey === "bim_aktif") {
+        return BIM_AKTIF_BUTTON_MAP[btnKey as keyof typeof BIM_AKTIF_BUTTON_MAP] || btnKey;
+    }
+
+    if (pageKey === "bim_tamamlanan") {
+        return (
+            BIM_TAMAMLANAN_BUTTON_MAP[btnKey as keyof typeof BIM_TAMAMLANAN_BUTTON_MAP] || btnKey
+        );
+    }
+
+    if (pageKey === "bim_silinen") {
+        return BIM_SILINEN_BUTTON_MAP[btnKey as keyof typeof BIM_SILINEN_BUTTON_MAP] || btnKey;
+    }
+
+    return btnKey;
+}
+
+type PagePermission = {
+    page?: boolean;
+    cols?: Record<string, boolean>;
+    btns?: Record<string, boolean>;
+};
+
+function flattenPermissions(yetkiOverride: Record<string, PagePermission> | null | undefined) {
+    const flatPermissions: string[] = [];
+
+    Object.entries(yetkiOverride || {}).forEach(([pageKey, perm]) => {
+        const finalPageKey = mapPageKey(pageKey);
+
+        if (perm.page) {
+            flatPermissions.push(`${finalPageKey}.page`);
+        }
+
+        Object.entries(perm.cols || {}).forEach(([colKey, value]) => {
+            if (value) {
+                flatPermissions.push(
+                    `${finalPageKey}.column.${mapColumnKey(pageKey, colKey)}`
+                );
+            }
+        });
+
+        Object.entries(perm.btns || {}).forEach(([btnKey, value]) => {
+            if (value) {
+                flatPermissions.push(
+                    `${finalPageKey}.button.${mapButtonKey(pageKey, btnKey)}`
+                );
+            }
+        });
+    });
+
+    return flatPermissions;
+}
 
 function Login() {
     const navigate = useNavigate();
+    const { refreshAuth } = useAuth();
 
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -12,9 +185,12 @@ function Login() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError("");
+
+        localStorage.removeItem("aktifKullanici");
+        localStorage.removeItem("permissions");
 
         const cleanUsername = username.trim();
         const cleanPassword = password.trim();
@@ -28,7 +204,7 @@ function Login() {
 
         const { data, error } = await supabase
             .from("kullanicilar")
-            .select("id, kullanici_adi, ad, rol, ekran_gorunumleri, aktif")
+            .select("id, kullanici_adi, ad, rol, ekran_gorunumleri, aktif, yetki_override")
             .eq("kullanici_adi", cleanUsername)
             .eq("sifre", cleanPassword)
             .eq("aktif", true)
@@ -38,18 +214,42 @@ function Login() {
 
         if (error) {
             setError("Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin.");
+            logKaydet({
+                seviye: "hata",
+                kategori: "Güvenlik",
+                mesaj: "Giriş sırasında Supabase hatası oluştu",
+                detay: `Kullanıcı adı: ${cleanUsername} — ${error.message}`,
+            });
             return;
         }
 
         if (!data) {
             setError("Kullanıcı adı veya şifre hatalı.");
+            logKaydet({
+                seviye: "uyari",
+                kategori: "Güvenlik",
+                mesaj: "Başarısız giriş denemesi",
+                detay: `Kullanıcı adı: ${cleanUsername}`,
+            });
             return;
         }
 
+        console.log("LOGIN USER:", data);
+
         localStorage.setItem("aktifKullanici", JSON.stringify(data));
+        localStorage.removeItem("aktifSeferlerColumnView");
+
+        logKaydet({
+            seviye: "bilgi",
+            kategori: "Kullanıcı",
+            mesaj: "Kullanıcı girişi başarılı",
+            detay: `${data.kullanici_adi} (${data.ad ?? "-"}) sisteme giriş yaptı.`,
+        });
+
+        await refreshAuth();
+
         navigate("/anasayfa");
     };
-
     return (
         <main className="login-page">
             <section className="login-shell" aria-label="ODAK LOJİSTİK giriş ekranı">

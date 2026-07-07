@@ -1,6 +1,23 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../context/AuthContext";
 import "./Navlunlar.css";
+
+const PAGE_KEY = "donus_navlun";
+
+const BUTTONS = {
+    CREATE: "create",
+    EDIT: "edit",
+    UPDATE: "update",
+    DELETE: "delete",
+};
+
+const COLUMNS = {
+    MUSTERI: "Müşteri Adı",
+    YUKLEME: "Yükleme Yeri",
+    TESLIM: "Teslim Yeri",
+    NAVLUN: "Navlun",
+};
 
 const emptyForm = {
     musteri_adi: "",
@@ -10,6 +27,19 @@ const emptyForm = {
 };
 
 export default function Navlunlar() {
+    const { canPage, canButton, canColumn } = useAuth();
+
+    const canViewPage = canPage(PAGE_KEY);
+    const canCreate = canButton(PAGE_KEY, BUTTONS.CREATE);
+    const canEdit = canButton(PAGE_KEY, BUTTONS.EDIT);
+    const canUpdate = canButton(PAGE_KEY, BUTTONS.UPDATE);
+    const canDelete = canButton(PAGE_KEY, BUTTONS.DELETE);
+
+    const showMusteri = canColumn(PAGE_KEY, COLUMNS.MUSTERI);
+    const showYukleme = canColumn(PAGE_KEY, COLUMNS.YUKLEME);
+    const showTeslim = canColumn(PAGE_KEY, COLUMNS.TESLIM);
+    const showNavlun = canColumn(PAGE_KEY, COLUMNS.NAVLUN);
+
     const [rows, setRows] = useState([]);
     const [form, setForm] = useState(emptyForm);
     const [editingId, setEditingId] = useState(null);
@@ -18,8 +48,8 @@ export default function Navlunlar() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        fetchRows();
-    }, []);
+        if (canViewPage) fetchRows();
+    }, [canViewPage]);
 
     async function fetchRows() {
         setLoading(true);
@@ -56,6 +86,8 @@ export default function Navlunlar() {
     }
 
     function startEdit(row) {
+        if (!canEdit) return;
+
         setEditingId(row.id);
 
         setForm({
@@ -70,6 +102,16 @@ export default function Navlunlar() {
 
     async function saveRow(e) {
         e.preventDefault();
+
+        if (editingId && !canUpdate) {
+            alert("Güncelleme yetkiniz yok.");
+            return;
+        }
+
+        if (!editingId && !canCreate) {
+            alert("Yeni navlun ekleme yetkiniz yok.");
+            return;
+        }
 
         if (
             !form.musteri_adi.trim() ||
@@ -110,6 +152,11 @@ export default function Navlunlar() {
     }
 
     async function deleteRow(row) {
+        if (!canDelete) {
+            alert("Silme yetkiniz yok.");
+            return;
+        }
+
         const ok = window.confirm(
             `${row.musteri_adi} - ${row.yukleme_yeri} kaydı silinsin mi?`
         );
@@ -175,6 +222,22 @@ export default function Navlunlar() {
         });
     }, [filteredRows]);
 
+    if (!canViewPage) {
+        return (
+            <div className="navlun-page">
+                <div className="navlun-shell">
+                    <div className="empty-box">
+                        <span className="empty-state">
+                            Bu sayfayı görüntüleme yetkiniz yok.
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const canShowActions = canEdit || canDelete;
+
     return (
         <div className="navlun-page">
             <div className="navlun-shell">
@@ -212,81 +275,83 @@ export default function Navlunlar() {
                     </div>
                 </header>
 
-                <form className="navlun-form" onSubmit={saveRow}>
-                    <div className="form-title">
-                        <div className="form-title-left">
-                            <span className={editingId ? "form-mode-dot edit" : "form-mode-dot"} aria-hidden="true" />
-                            <strong>{editingId ? "Navlun Kaydını Düzenle" : "Yeni Navlun Ekle"}</strong>
-                        </div>
-                        {editingId && (
-                            <span className="form-title-meta">
-                                Düzenlenen kayıt: <code>#{editingId}</code>
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="form-grid">
-                        <div className="field">
-                            <label htmlFor="musteri_adi">Müşteri Adı</label>
-                            <input
-                                id="musteri_adi"
-                                name="musteri_adi"
-                                value={form.musteri_adi}
-                                onChange={handleChange}
-                                placeholder="Müşteri adı"
-                            />
+                {(canCreate || (editingId && canUpdate)) && (
+                    <form className="navlun-form" onSubmit={saveRow}>
+                        <div className="form-title">
+                            <div className="form-title-left">
+                                <span className={editingId ? "form-mode-dot edit" : "form-mode-dot"} aria-hidden="true" />
+                                <strong>{editingId ? "Navlun Kaydını Düzenle" : "Yeni Navlun Ekle"}</strong>
+                            </div>
+                            {editingId && (
+                                <span className="form-title-meta">
+                                    Düzenlenen kayıt: <code>#{editingId}</code>
+                                </span>
+                            )}
                         </div>
 
-                        <div className="field">
-                            <label htmlFor="yukleme_yeri">Yükleme Yeri</label>
-                            <input
-                                id="yukleme_yeri"
-                                name="yukleme_yeri"
-                                value={form.yukleme_yeri}
-                                onChange={handleChange}
-                                placeholder="Yükleme yeri"
-                            />
-                        </div>
-
-                        <div className="field">
-                            <label htmlFor="teslim_yeri">Teslim Yeri</label>
-                            <input
-                                id="teslim_yeri"
-                                name="teslim_yeri"
-                                value={form.teslim_yeri}
-                                onChange={handleChange}
-                                placeholder="Teslim yeri"
-                            />
-                        </div>
-
-                        <div className="field field-amount">
-                            <label htmlFor="navlun">Navlun</label>
-                            <div className="amount-input">
+                        <div className="form-grid">
+                            <div className="field">
+                                <label htmlFor="musteri_adi">Müşteri Adı</label>
                                 <input
-                                    id="navlun"
-                                    name="navlun"
-                                    value={form.navlun}
+                                    id="musteri_adi"
+                                    name="musteri_adi"
+                                    value={form.musteri_adi}
                                     onChange={handleChange}
-                                    placeholder="0"
-                                    inputMode="numeric"
+                                    placeholder="Müşteri adı"
                                 />
-                                <span>₺</span>
+                            </div>
+
+                            <div className="field">
+                                <label htmlFor="yukleme_yeri">Yükleme Yeri</label>
+                                <input
+                                    id="yukleme_yeri"
+                                    name="yukleme_yeri"
+                                    value={form.yukleme_yeri}
+                                    onChange={handleChange}
+                                    placeholder="Yükleme yeri"
+                                />
+                            </div>
+
+                            <div className="field">
+                                <label htmlFor="teslim_yeri">Teslim Yeri</label>
+                                <input
+                                    id="teslim_yeri"
+                                    name="teslim_yeri"
+                                    value={form.teslim_yeri}
+                                    onChange={handleChange}
+                                    placeholder="Teslim yeri"
+                                />
+                            </div>
+
+                            <div className="field field-amount">
+                                <label htmlFor="navlun">Navlun</label>
+                                <div className="amount-input">
+                                    <input
+                                        id="navlun"
+                                        name="navlun"
+                                        value={form.navlun}
+                                        onChange={handleChange}
+                                        placeholder="0"
+                                        inputMode="numeric"
+                                    />
+                                    <span>₺</span>
+                                </div>
+                            </div>
+
+                            <div className="form-actions">
+                                {editingId && (
+                                    <button type="button" className="btn-cancel" onClick={resetForm}>
+                                        Vazgeç
+                                    </button>
+                                )}
+
+                                <button type="submit" className="btn-save" disabled={saving}>
+                                    {saving ? "Kaydediliyor..." : editingId ? "Güncelle" : "Ekle"}
+                                </button>
                             </div>
                         </div>
-
-                        <div className="form-actions">
-                            {editingId && (
-                                <button type="button" className="btn-cancel" onClick={resetForm}>
-                                    Vazgeç
-                                </button>
-                            )}
-
-                            <button type="submit" className="btn-save" disabled={saving}>
-                                {saving ? "Kaydediliyor..." : editingId ? "Güncelle" : "Ekle"}
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                    </form>
+                )}
 
                 {loading ? (
                     <div className="empty-box">
@@ -333,40 +398,51 @@ export default function Navlunlar() {
                                     <table className="group-table">
                                         <thead>
                                             <tr>
-                                                <th>Yükleme Yeri</th>
-                                                <th>Teslim Yeri</th>
-                                                <th>Navlun</th>
-                                                <th className="th-actions">İşlem</th>
+                                                {showMusteri && <th>Müşteri Adı</th>}
+                                                {showYukleme && <th>Yükleme Yeri</th>}
+                                                {showTeslim && <th>Teslim Yeri</th>}
+                                                {showNavlun && <th>Navlun</th>}
+                                                {canShowActions && <th className="th-actions">İşlem</th>}
                                             </tr>
                                         </thead>
 
                                         <tbody>
                                             {group.items.map((row) => (
                                                 <tr key={row.id}>
-                                                    <td>{row.yukleme_yeri || "-"}</td>
-                                                    <td>{row.teslim_yeri || "-"}</td>
-                                                    <td className="price-cell">
-                                                        {Number(row.navlun || 0).toLocaleString("tr-TR")} ₺
-                                                    </td>
-                                                    <td>
-                                                        <div className="row-actions">
-                                                            <button
-                                                                type="button"
-                                                                className="edit-btn"
-                                                                onClick={() => startEdit(row)}
-                                                            >
-                                                                Düzenle
-                                                            </button>
+                                                    {showMusteri && <td>{row.musteri_adi || "-"}</td>}
+                                                    {showYukleme && <td>{row.yukleme_yeri || "-"}</td>}
+                                                    {showTeslim && <td>{row.teslim_yeri || "-"}</td>}
+                                                    {showNavlun && (
+                                                        <td className="price-cell">
+                                                            {Number(row.navlun || 0).toLocaleString("tr-TR")} ₺
+                                                        </td>
+                                                    )}
 
-                                                            <button
-                                                                type="button"
-                                                                className="delete-btn"
-                                                                onClick={() => deleteRow(row)}
-                                                            >
-                                                                Sil
-                                                            </button>
-                                                        </div>
-                                                    </td>
+                                                    {canShowActions && (
+                                                        <td>
+                                                            <div className="row-actions">
+                                                                {canEdit && (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="edit-btn"
+                                                                        onClick={() => startEdit(row)}
+                                                                    >
+                                                                        Düzenle
+                                                                    </button>
+                                                                )}
+
+                                                                {canDelete && (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="delete-btn"
+                                                                        onClick={() => deleteRow(row)}
+                                                                    >
+                                                                        Sil
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    )}
                                                 </tr>
                                             ))}
                                         </tbody>

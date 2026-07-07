@@ -1,6 +1,23 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../context/AuthContext";
 import "./ugramasart.css";
+
+const PAGE_KEY = "ekkayit_ugrama";
+
+const BUTTONS = {
+    TOGGLE_IKIZ_DEPO: "toggle_ikiz_depo",
+    UPDATE_AMOUNT: "update_amount",
+    TOGGLE_STATUS: "toggle_status",
+};
+
+const COLUMNS = {
+    VKN: "VKN",
+    CUSTOMER: "Müşteri / Tip",
+    AMOUNT: "Tutar",
+    STATUS: "Durum",
+    RECORD: "Kayıt",
+};
 
 const SPECIAL_RULES = {
     "24388338234": {
@@ -16,6 +33,19 @@ const SPECIAL_RULES = {
 const DEFAULT_AMOUNT = "900";
 
 export default function UgramaSart() {
+    const { canPage, canButton, canColumn } = useAuth();
+
+    const canViewPage = canPage(PAGE_KEY);
+    const canToggleIkizDepo = canButton(PAGE_KEY, BUTTONS.TOGGLE_IKIZ_DEPO);
+    const canUpdateAmount = canButton(PAGE_KEY, BUTTONS.UPDATE_AMOUNT);
+    const canToggleStatus = canButton(PAGE_KEY, BUTTONS.TOGGLE_STATUS);
+
+    const showVkn = canColumn(PAGE_KEY, COLUMNS.VKN);
+    const showCustomer = canColumn(PAGE_KEY, COLUMNS.CUSTOMER);
+    const showAmount = canColumn(PAGE_KEY, COLUMNS.AMOUNT);
+    const showStatus = canColumn(PAGE_KEY, COLUMNS.STATUS);
+    const showRecord = canColumn(PAGE_KEY, COLUMNS.RECORD);
+
     const [vknler, setVknler] = useState([]);
     const [rules, setRules] = useState([]);
     const [search, setSearch] = useState("");
@@ -24,10 +54,11 @@ export default function UgramaSart() {
     const [activeTab, setActiveTab] = useState("ikizDepo");
 
     useEffect(() => {
-        fetchAll();
-    }, []);
+        if (canViewPage) fetchAll();
+    }, [canViewPage]);
 
     useEffect(() => {
+        if (!canUpdateAmount) return;
         if (!rules.length) return;
 
         const timer = setTimeout(() => {
@@ -44,7 +75,7 @@ export default function UgramaSart() {
         }, 600);
 
         return () => clearTimeout(timer);
-    }, [rules]);
+    }, [rules, canUpdateAmount]);
 
     async function fetchAll() {
         setLoading(true);
@@ -272,6 +303,11 @@ export default function UgramaSart() {
     }
 
     async function toggleRule(rule) {
+        if (!canToggleStatus) {
+            alert("Durum değiştirme yetkiniz yok.");
+            return;
+        }
+
         const nextRule = {
             ...rule,
             acik: !rule.acik,
@@ -282,6 +318,11 @@ export default function UgramaSart() {
     }
 
     function changeAmount(rule, value) {
+        if (!canUpdateAmount) {
+            alert("Tutar güncelleme yetkiniz yok.");
+            return;
+        }
+
         const nextRule = {
             ...rule,
             tutar: value,
@@ -291,6 +332,11 @@ export default function UgramaSart() {
     }
 
     async function toggleIkizDepo() {
+        if (!canToggleIkizDepo) {
+            alert("İkiz depo şartını değiştirme yetkiniz yok.");
+            return;
+        }
+
         const nextRule = {
             ...ikizDepoRule,
             acik: !ikizDepoRule.acik,
@@ -299,6 +345,25 @@ export default function UgramaSart() {
 
         updateLocalRule(nextRule, false);
         await saveRule(nextRule);
+    }
+
+    const colSpan =
+        [showVkn, showCustomer, showAmount, showStatus, showRecord].filter(Boolean).length || 1;
+
+    if (!canViewPage) {
+        return (
+            <div className="ugrama-page">
+                <div className="ugrama-shell">
+                    <section className="rules-panel">
+                        <div className="empty-row">
+                            <span className="empty-state">
+                                Bu sayfayı görüntüleme yetkiniz yok.
+                            </span>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -316,6 +381,7 @@ export default function UgramaSart() {
                             <span className="meta-chip-value">{uniqueVknList.length}</span>
                             <span className="meta-chip-label">Toplam VKN</span>
                         </div>
+
                         <div className="meta-chip meta-chip-accent">
                             <span className="meta-chip-value">{acikSayisi}</span>
                             <span className="meta-chip-label">Aktif Kural</span>
@@ -376,7 +442,7 @@ export default function UgramaSart() {
                                 aria-checked={ikizDepoRule.acik}
                                 className={ikizDepoRule.acik ? "switch on" : "switch"}
                                 onClick={toggleIkizDepo}
-                                disabled={savingKey === "ikiz_depo-guzelhisar"}
+                                disabled={!canToggleIkizDepo || savingKey === "ikiz_depo-guzelhisar"}
                             >
                                 <span className="switch-track">
                                     <span className="switch-thumb" />
@@ -399,6 +465,7 @@ export default function UgramaSart() {
                                     <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.6" />
                                     <path d="m20 20-3.2-3.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                                 </svg>
+
                                 <input
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
@@ -412,18 +479,18 @@ export default function UgramaSart() {
                             <table className="rules-table">
                                 <thead>
                                     <tr>
-                                        <th>VKN</th>
-                                        <th>Müşteri / Tip</th>
-                                        <th>Tutar</th>
-                                        <th>Durum</th>
-                                        <th>Kayıt</th>
+                                        {showVkn && <th>VKN</th>}
+                                        {showCustomer && <th>Müşteri / Tip</th>}
+                                        {showAmount && <th>Tutar</th>}
+                                        {showStatus && <th>Durum</th>}
+                                        {showRecord && <th>Kayıt</th>}
                                     </tr>
                                 </thead>
 
                                 <tbody>
                                     {loading ? (
                                         <tr>
-                                            <td colSpan="5" className="empty-row">
+                                            <td colSpan={colSpan} className="empty-row">
                                                 <span className="empty-state">
                                                     <span className="spinner" aria-hidden="true" />
                                                     Yükleniyor...
@@ -432,7 +499,7 @@ export default function UgramaSart() {
                                         </tr>
                                     ) : filteredRules.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="empty-row">
+                                            <td colSpan={colSpan} className="empty-row">
                                                 <span className="empty-state">Kayıt bulunamadı.</span>
                                             </td>
                                         </tr>
@@ -442,69 +509,73 @@ export default function UgramaSart() {
 
                                             return (
                                                 <tr key={rule.anahtar}>
-                                                    <td>
-                                                        <span className="vkn-pill">
-                                                            {rule.anahtar}
-                                                        </span>
-                                                    </td>
-
-                                                    <td>
-                                                        <strong className="customer-name">{rule.label}</strong>
-                                                    </td>
-
-                                                    <td>
-                                                        <div className="amount-input">
-                                                            <input
-                                                                value={rule.tutar}
-                                                                onChange={(e) =>
-                                                                    changeAmount(
-                                                                        rule,
-                                                                        e.target.value
-                                                                    )
-                                                                }
-                                                                inputMode="numeric"
-                                                                aria-label={`${rule.label} uğrama tutarı`}
-                                                            />
-                                                            <span>₺</span>
-                                                        </div>
-                                                    </td>
-
-                                                    <td>
-                                                        <button
-                                                            type="button"
-                                                            role="switch"
-                                                            aria-checked={rule.acik}
-                                                            className={
-                                                                rule.acik
-                                                                    ? "switch on"
-                                                                    : "switch"
-                                                            }
-                                                            onClick={() => toggleRule(rule)}
-                                                            disabled={savingKey === rowKey}
-                                                        >
-                                                            <span className="switch-track">
-                                                                <span className="switch-thumb" />
+                                                    {showVkn && (
+                                                        <td>
+                                                            <span className="vkn-pill">
+                                                                {rule.anahtar}
                                                             </span>
-                                                        </button>
-                                                    </td>
+                                                        </td>
+                                                    )}
 
-                                                    <td>
-                                                        <span
-                                                            className={
-                                                                savingKey === rowKey
-                                                                    ? "save-status saving"
+                                                    {showCustomer && (
+                                                        <td>
+                                                            <strong className="customer-name">{rule.label}</strong>
+                                                        </td>
+                                                    )}
+
+                                                    {showAmount && (
+                                                        <td>
+                                                            <div className="amount-input">
+                                                                <input
+                                                                    value={rule.tutar}
+                                                                    onChange={(e) =>
+                                                                        changeAmount(rule, e.target.value)
+                                                                    }
+                                                                    inputMode="numeric"
+                                                                    aria-label={`${rule.label} uğrama tutarı`}
+                                                                    disabled={!canUpdateAmount}
+                                                                />
+                                                                <span>₺</span>
+                                                            </div>
+                                                        </td>
+                                                    )}
+
+                                                    {showStatus && (
+                                                        <td>
+                                                            <button
+                                                                type="button"
+                                                                role="switch"
+                                                                aria-checked={rule.acik}
+                                                                className={rule.acik ? "switch on" : "switch"}
+                                                                onClick={() => toggleRule(rule)}
+                                                                disabled={!canToggleStatus || savingKey === rowKey}
+                                                            >
+                                                                <span className="switch-track">
+                                                                    <span className="switch-thumb" />
+                                                                </span>
+                                                            </button>
+                                                        </td>
+                                                    )}
+
+                                                    {showRecord && (
+                                                        <td>
+                                                            <span
+                                                                className={
+                                                                    savingKey === rowKey
+                                                                        ? "save-status saving"
+                                                                        : rule._changed
+                                                                            ? "save-status pending"
+                                                                            : "save-status saved"
+                                                                }
+                                                            >
+                                                                {savingKey === rowKey
+                                                                    ? "Kaydediliyor..."
                                                                     : rule._changed
-                                                                        ? "save-status pending"
-                                                                        : "save-status saved"
-                                                            }
-                                                        >
-                                                            {savingKey === rowKey
-                                                                ? "Kaydediliyor..."
-                                                                : rule._changed
-                                                                    ? "Bekliyor"
-                                                                    : "Kaydedildi"}
-                                                        </span>
-                                                    </td>
+                                                                        ? "Bekliyor"
+                                                                        : "Kaydedildi"}
+                                                            </span>
+                                                        </td>
+                                                    )}
                                                 </tr>
                                             );
                                         })

@@ -13,8 +13,14 @@
     --ypw-soft: #9ca3af;
     --ypw-border: #e5e7eb;
     --ypw-border-strong: #d1d5db;
+    /* Nötr marka rengi (sadece logo/ikon kimliği için) */
     --ypw-dark: #111827;
     --ypw-dark-hover: #1f2937;
+    /* Tek birincil vurgu rengi — tüm etkileşimli/aktif öğeler bunu kullanır */
+    --ypw-primary: #1d4ed8;
+    --ypw-primary-hover: #1e40af;
+    --ypw-primary-soft: #eff6ff;
+    --ypw-primary-border: #bfdbfe;
     --ypw-row: #f8fafc;
     --ypw-success: #166534;
     --ypw-danger: #991b1b;

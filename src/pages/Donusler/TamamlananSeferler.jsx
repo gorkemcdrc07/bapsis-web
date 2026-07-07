@@ -1,15 +1,55 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../context/AuthContext";
 import "./TamamlananSeferler.css";
 
+const PAGE_KEY = "donus_tamamlanan";
+
+const COLUMNS = {
+    TAMAMLANMA: "Tamamlanma Tarihi",
+    SEFER_NO: "Sefer No",
+    SEVK_TARIHI: "Sevk Tarihi",
+    CEKICI: "Çekici",
+    DORSE: "Dorse",
+    SURUCU: "Sürücü",
+    TELEFON: "Telefon",
+    IRSALIYE: "İrsaliye",
+    NAVLUN: "Navlun",
+    TAMAMLAYAN: "Tamamlayan",
+};
+
+const BUTTONS = {
+    REFRESH: "refresh",
+};
+
 export default function TamamlananSeferler() {
+    const { canPage, canButton, canColumn } = useAuth();
+
+    const canViewPage = canPage(PAGE_KEY);
+    const canRefresh = canButton(PAGE_KEY, BUTTONS.REFRESH);
+
+    const visibleColumns = useMemo(() => {
+        return [
+            { key: "tamamlanma", label: "Tamamlanma", visible: canColumn(PAGE_KEY, COLUMNS.TAMAMLANMA) },
+            { key: "seferNo", label: "Sefer No", visible: canColumn(PAGE_KEY, COLUMNS.SEFER_NO) },
+            { key: "sevkTarihi", label: "Sevk Tarihi", visible: canColumn(PAGE_KEY, COLUMNS.SEVK_TARIHI) },
+            { key: "cekici", label: "Çekici", visible: canColumn(PAGE_KEY, COLUMNS.CEKICI) },
+            { key: "dorse", label: "Dorse", visible: canColumn(PAGE_KEY, COLUMNS.DORSE) },
+            { key: "surucu", label: "Sürücü", visible: canColumn(PAGE_KEY, COLUMNS.SURUCU) },
+            { key: "telefon", label: "Telefon", visible: canColumn(PAGE_KEY, COLUMNS.TELEFON) },
+            { key: "irsaliyeNo", label: "İrsaliye", visible: canColumn(PAGE_KEY, COLUMNS.IRSALIYE) },
+            { key: "navlun", label: "Navlun", visible: canColumn(PAGE_KEY, COLUMNS.NAVLUN) },
+            { key: "tamamlayan", label: "Tamamlayan", visible: canColumn(PAGE_KEY, COLUMNS.TAMAMLAYAN) },
+        ].filter((column) => column.visible);
+    }, [canColumn]);
+
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
 
     useEffect(() => {
-        fetchRows();
-    }, []);
+        if (canViewPage) fetchRows();
+    }, [canViewPage]);
 
     async function fetchRows() {
         setLoading(true);
@@ -45,6 +85,25 @@ export default function TamamlananSeferler() {
         }
     }
 
+    function getCellValue(item, key) {
+        const row = item.sefer_verisi || {};
+
+        const values = {
+            tamamlanma: formatDate(item.created_at),
+            seferNo: row.seferNo || "—",
+            sevkTarihi: row.sevkTarihi || "—",
+            cekici: row.cekici || "—",
+            dorse: row.dorse || "—",
+            surucu: row.surucu || "—",
+            telefon: row.telefon || "—",
+            irsaliyeNo: row.irsaliyeNo || "—",
+            navlun: row.navlun || "—",
+            tamamlayan: item.tamamlayan_kullanici_adi || "—",
+        };
+
+        return values[key] || "—";
+    }
+
     const filteredRows = useMemo(() => {
         const q = search.trim().toLowerCase();
 
@@ -74,6 +133,20 @@ export default function TamamlananSeferler() {
 
     const toplamKayit = rows.length;
     const gorunenKayit = filteredRows.length;
+    const colSpan = Math.max(visibleColumns.length, 1);
+
+    if (!canViewPage) {
+        return (
+            <div className="dpa-page">
+                <div className="dpa-card">
+                    <div className="dpa-empty">
+                        <strong>Erişim kısıtlı</strong>
+                        <p>Bu sayfayı görüntüleme yetkiniz yok.</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="dpa-page">
@@ -87,9 +160,11 @@ export default function TamamlananSeferler() {
                     </p>
                 </div>
 
-                <button className="dpa-refresh-btn" onClick={fetchRows} disabled={loading}>
-                    {loading ? "Yükleniyor..." : "Yenile"}
-                </button>
+                {canRefresh && (
+                    <button className="dpa-refresh-btn" onClick={fetchRows} disabled={loading}>
+                        {loading ? "Yükleniyor..." : "Yenile"}
+                    </button>
+                )}
             </div>
 
             <div className="dpa-stats-grid">
@@ -130,23 +205,16 @@ export default function TamamlananSeferler() {
                     <table className="dpa-table">
                         <thead>
                             <tr>
-                                <th>Tamamlanma</th>
-                                <th>Sefer No</th>
-                                <th>Sevk Tarihi</th>
-                                <th>Çekici</th>
-                                <th>Dorse</th>
-                                <th>Sürücü</th>
-                                <th>Telefon</th>
-                                <th>İrsaliye</th>
-                                <th>Navlun</th>
-                                <th>Tamamlayan</th>
+                                {visibleColumns.map((column) => (
+                                    <th key={column.key}>{column.label}</th>
+                                ))}
                             </tr>
                         </thead>
 
                         <tbody>
                             {loading && (
                                 <tr>
-                                    <td colSpan={10}>
+                                    <td colSpan={colSpan}>
                                         <div className="dpa-empty">
                                             <div className="dpa-loader" />
                                             <strong>Kayıtlar yükleniyor...</strong>
@@ -156,35 +224,39 @@ export default function TamamlananSeferler() {
                             )}
 
                             {!loading &&
-                                filteredRows.map((item) => {
-                                    const row = item.sefer_verisi || {};
-
-                                    return (
-                                        <tr key={item.id}>
-                                            <td>{formatDate(item.created_at)}</td>
-                                            <td>
-                                                <span className="dpa-badge">
-                                                    {row.seferNo || "—"}
-                                                </span>
+                                filteredRows.map((item) => (
+                                    <tr key={item.id}>
+                                        {visibleColumns.map((column) => (
+                                            <td key={column.key}>
+                                                {column.key === "seferNo" ? (
+                                                    <span className="dpa-badge">
+                                                        {getCellValue(item, column.key)}
+                                                    </span>
+                                                ) : (
+                                                    getCellValue(item, column.key)
+                                                )}
                                             </td>
-                                            <td>{row.sevkTarihi || "—"}</td>
-                                            <td>{row.cekici || "—"}</td>
-                                            <td>{row.dorse || "—"}</td>
-                                            <td>{row.surucu || "—"}</td>
-                                            <td>{row.telefon || "—"}</td>
-                                            <td>{row.irsaliyeNo || "—"}</td>
-                                            <td>{row.navlun || "—"}</td>
-                                            <td>{item.tamamlayan_kullanici_adi || "—"}</td>
-                                        </tr>
-                                    );
-                                })}
+                                        ))}
+                                    </tr>
+                                ))}
 
                             {!loading && filteredRows.length === 0 && (
                                 <tr>
-                                    <td colSpan={10}>
+                                    <td colSpan={colSpan}>
                                         <div className="dpa-empty">
                                             <strong>Tamamlanan sefer bulunamadı.</strong>
                                             <p>Arama kriterini değiştirip tekrar deneyebilirsin.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+
+                            {!loading && visibleColumns.length === 0 && (
+                                <tr>
+                                    <td colSpan={1}>
+                                        <div className="dpa-empty">
+                                            <strong>Görüntülenecek sütun yok.</strong>
+                                            <p>Bu sayfa için sütun yetkisi verilmemiş.</p>
                                         </div>
                                     </td>
                                 </tr>

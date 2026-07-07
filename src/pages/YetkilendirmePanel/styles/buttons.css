@@ -36,13 +36,13 @@
     }
 
     .ypw-btn.primary {
-        background: var(--ypw-dark);
-        border-color: var(--ypw-dark);
+        background: var(--ypw-primary);
+        border-color: var(--ypw-primary);
         color: #fff;
     }
 
         .ypw-btn.primary:hover:not(:disabled) {
-            background: var(--ypw-dark-hover);
+            background: var(--ypw-primary-hover);
         }
 
     .ypw-btn.ghost {
@@ -88,7 +88,7 @@
 }
 
     .ypw-toggle.on {
-        background: var(--ypw-dark);
+        background: var(--ypw-primary);
     }
 
     .ypw-toggle:disabled {
@@ -111,12 +111,6 @@
     .ypw-toggle.on span {
         transform: translateX(19px);
     }
-
-.ypw-btn.primary.colorful {
-    border-color: transparent;
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
-    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
-}
 
 .ypw-action-btn {
     height: 32px;
@@ -151,83 +145,50 @@
     .ypw-action-btn.edit,
     .ypw-action-btn.lock,
     .ypw-action-btn.danger {
-        width: 34px;
-        height: 34px;
+        width: 34px !important;
+        height: 34px !important;
         padding: 0;
-        border-radius: 11px;
+        border-radius: 9px !important;
+        background: #fff;
     }
 
         .ypw-row-actions.icon-only .ypw-action-btn i {
             font-size: 16px;
         }
 
-        .ypw-action-btn.edit:hover {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-            color: #1d4ed8;
-        }
-
-        .ypw-action-btn.lock:hover {
-            background: #fff7ed;
-            border-color: #fed7aa;
-            color: #c2410c;
-        }
-
-        .ypw-action-btn.danger:hover {
-            background: #fef2f2;
-            border-color: #fecaca;
-            color: #b91c1c;
-        }
-
-            .ypw-action-btn.edit:hover i,
-            .ypw-action-btn.lock:hover i,
-            .ypw-action-btn.danger:hover i {
-                color: currentColor;
-            }
-
-    .ypw-row-actions.icon-only .ypw-action-btn,
-    .ypw-action-btn.edit,
-    .ypw-action-btn.lock,
-    .ypw-action-btn.danger {
-        width: 46px;
-        height: 46px;
-        border-radius: 12px;
-        background: #fff;
-    }
-
     .ypw-action-btn.edit {
-        color: #2563eb;
-        border-color: #bfdbfe;
+        color: var(--ypw-primary);
+        border-color: var(--ypw-primary-border);
     }
+
+        .ypw-action-btn.edit:hover {
+            background: var(--ypw-primary-soft);
+            border-color: var(--ypw-primary-border);
+        }
 
     .ypw-action-btn.lock {
-        color: #f59e0b;
+        color: #c2410c;
         border-color: #fed7aa;
     }
 
+        .ypw-action-btn.lock:hover {
+            background: #fff7ed;
+            border-color: #fcd34d;
+        }
+
     .ypw-action-btn.danger {
-        color: #ef4444;
+        color: #b91c1c;
         border-color: #fecaca;
     }
 
-    .ypw-action-btn.edit:hover {
-        background: #eff6ff;
-        border-color: #93c5fd;
-    }
-
-    .ypw-action-btn.lock:hover {
-        background: #fffbeb;
-        border-color: #fcd34d;
-    }
-
-    .ypw-action-btn.danger:hover {
-        background: #fef2f2;
-        border-color: #fca5a5;
-    }
+        .ypw-action-btn.danger:hover {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
 
     .ypw-action-btn.save {
-        background: #166534;
-        border-color: #166534;
+        background: var(--ypw-success);
+        border-color: var(--ypw-success);
         color: #fff;
     }
 
@@ -245,15 +206,6 @@
         .ypw-action-btn.cancel:hover:not(:disabled) {
             background: #e5e7eb;
         }
-
-    .ypw-row-actions.icon-only .ypw-action-btn,
-    .ypw-action-btn.edit,
-    .ypw-action-btn.lock,
-    .ypw-action-btn.danger {
-        width: 34px !important;
-        height: 34px !important;
-        border-radius: 9px !important;
-    }
 
 .ypw-btn.danger {
     background: #dc2626;

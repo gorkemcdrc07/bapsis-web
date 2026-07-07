@@ -1,8 +1,35 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../context/AuthContext";
 import "./vkn.css";
 
+const PAGE_KEY = "ekkayit_vkn";
+
+const BUTTONS = {
+    CREATE: "Yeni VKN Ekle",
+    EDIT: "Düzenle",
+    UPDATE: "Güncelle",
+    DELETE: "Sil",
+};
+
+const COLUMNS = {
+    VKN: "VKN",
+    USAGE: "Kullanım Sayısı",
+};
+
 export default function Vkn() {
+    const { canPage, canButton, canColumn } = useAuth();
+
+    const canViewPage = canPage(PAGE_KEY);
+    const canCreate = canButton(PAGE_KEY, BUTTONS.CREATE);
+    const canEdit = canButton(PAGE_KEY, BUTTONS.EDIT);
+    const canUpdate = canButton(PAGE_KEY, BUTTONS.UPDATE);
+    const canDelete = canButton(PAGE_KEY, BUTTONS.DELETE);
+
+    const showVkn = canColumn(PAGE_KEY, COLUMNS.VKN);
+    const showUsage = canColumn(PAGE_KEY, COLUMNS.USAGE);
+    const showActions = canEdit || canDelete;
+
     const [vknList, setVknList] = useState([]);
     const [vkn, setVkn] = useState("");
     const [editingItem, setEditingItem] = useState(null);
@@ -11,8 +38,8 @@ export default function Vkn() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        fetchVknler();
-    }, []);
+        if (canViewPage) fetchVknler();
+    }, [canViewPage]);
 
     async function fetchVknler() {
         setLoading(true);
@@ -43,6 +70,11 @@ export default function Vkn() {
     }
 
     function startEdit(item) {
+        if (!canEdit) {
+            alert("Düzenleme yetkiniz yok.");
+            return;
+        }
+
         setEditingItem(item);
         setVkn(item.vkn);
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -50,6 +82,16 @@ export default function Vkn() {
 
     async function saveVkn(e) {
         e.preventDefault();
+
+        if (editingItem && !canUpdate) {
+            alert("Güncelleme yetkiniz yok.");
+            return;
+        }
+
+        if (!editingItem && !canCreate) {
+            alert("Yeni VKN ekleme yetkiniz yok.");
+            return;
+        }
 
         const newVkn = vkn.trim();
 
@@ -60,18 +102,14 @@ export default function Vkn() {
 
         setSaving(true);
 
-        let result;
-
-        if (editingItem) {
-            result = await supabase
+        const result = editingItem
+            ? await supabase
                 .from("vknler")
                 .update({ vkn: newVkn })
-                .eq("id", editingItem.id);
-        } else {
-            result = await supabase
+                .eq("id", editingItem.id)
+            : await supabase
                 .from("vknler")
                 .insert({ vkn: newVkn });
-        }
 
         setSaving(false);
 
@@ -92,6 +130,11 @@ export default function Vkn() {
     }
 
     async function deleteVkn(item) {
+        if (!canDelete) {
+            alert("Silme yetkiniz yok.");
+            return;
+        }
+
         const count = item.araclar?.length || 0;
 
         if (count > 0) {
@@ -139,6 +182,24 @@ export default function Vkn() {
         [filteredVknList]
     );
 
+    const colSpan = [showVkn, showUsage, showActions].filter(Boolean).length || 1;
+
+    if (!canViewPage) {
+        return (
+            <div className="vkn-page">
+                <div className="vkn-shell">
+                    <section className="vkn-card">
+                        <div className="empty-row">
+                            <span className="empty-state">
+                                Bu sayfayı görüntüleme yetkiniz yok.
+                            </span>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="vkn-page">
             <div className="vkn-shell">
@@ -176,71 +237,73 @@ export default function Vkn() {
                     </div>
                 </header>
 
-                <form className="vkn-form" onSubmit={saveVkn}>
-                    <div className="form-title">
-                        <div className="form-title-left">
-                            <span className={editingItem ? "form-mode-dot edit" : "form-mode-dot"} aria-hidden="true" />
-                            <strong>
-                                {editingItem ? "VKN Düzenle" : "Yeni VKN Ekle"}
-                            </strong>
-                        </div>
+                {(canCreate || editingItem) && (
+                    <form className="vkn-form" onSubmit={saveVkn}>
+                        <div className="form-title">
+                            <div className="form-title-left">
+                                <span className={editingItem ? "form-mode-dot edit" : "form-mode-dot"} aria-hidden="true" />
+                                <strong>
+                                    {editingItem ? "VKN Düzenle" : "Yeni VKN Ekle"}
+                                </strong>
+                            </div>
 
-                        {editingItem && (
-                            <span className="form-title-meta">
-                                Eski VKN: <code>{editingItem.vkn}</code>
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="form-grid only-vkn">
-                        <input
-                            value={vkn}
-                            onChange={(e) => setVkn(e.target.value)}
-                            placeholder="VKN girin"
-                            aria-label="VKN"
-                        />
-
-                        <div className="form-actions">
                             {editingItem && (
-                                <button
-                                    type="button"
-                                    className="btn-cancel"
-                                    onClick={resetForm}
-                                >
-                                    Vazgeç
-                                </button>
+                                <span className="form-title-meta">
+                                    Eski VKN: <code>{editingItem.vkn}</code>
+                                </span>
                             )}
-
-                            <button
-                                type="submit"
-                                className="btn-save"
-                                disabled={saving}
-                            >
-                                {saving
-                                    ? "Kaydediliyor..."
-                                    : editingItem
-                                        ? "Güncelle"
-                                        : "Ekle"}
-                            </button>
                         </div>
-                    </div>
-                </form>
+
+                        <div className="form-grid only-vkn">
+                            <input
+                                value={vkn}
+                                onChange={(e) => setVkn(e.target.value)}
+                                placeholder="VKN girin"
+                                aria-label="VKN"
+                            />
+
+                            <div className="form-actions">
+                                {editingItem && (
+                                    <button
+                                        type="button"
+                                        className="btn-cancel"
+                                        onClick={resetForm}
+                                    >
+                                        Vazgeç
+                                    </button>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    className="btn-save"
+                                    disabled={saving}
+                                >
+                                    {saving
+                                        ? "Kaydediliyor..."
+                                        : editingItem
+                                            ? "Güncelle"
+                                            : "Ekle"}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                )}
 
                 <section className="vkn-card">
                     <div className="vkn-table-wrap">
                         <table className="vkn-table">
                             <thead>
                                 <tr>
-                                    <th>VKN</th>
-                                    <th>Kullanım Sayısı</th>
-                                    <th className="th-actions">İşlemler</th>
+                                    {showVkn && <th>VKN</th>}
+                                    {showUsage && <th>Kullanım Sayısı</th>}
+                                    {showActions && <th className="th-actions">İşlemler</th>}
                                 </tr>
                             </thead>
 
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="3" className="empty-row">
+                                        <td colSpan={colSpan} className="empty-row">
                                             <span className="empty-state">
                                                 <span className="spinner" aria-hidden="true" />
                                                 Yükleniyor...
@@ -249,54 +312,60 @@ export default function Vkn() {
                                     </tr>
                                 ) : filteredVknList.length === 0 ? (
                                     <tr>
-                                        <td colSpan="3" className="empty-row">
+                                        <td colSpan={colSpan} className="empty-row">
                                             <span className="empty-state">Kayıt bulunamadı.</span>
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredVknList.map((item) => (
                                         <tr key={item.id}>
-                                            <td>
-                                                <span className="vkn-pill">
-                                                    {item.vkn}
-                                                </span>
-                                            </td>
+                                            {showVkn && (
+                                                <td>
+                                                    <span className="vkn-pill">
+                                                        {item.vkn}
+                                                    </span>
+                                                </td>
+                                            )}
 
-                                            <td>
-                                                <span
-                                                    className={
-                                                        item.count > 0
-                                                            ? "usage-badge active"
-                                                            : "usage-badge"
-                                                    }
-                                                >
-                                                    {item.count} kayıt
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                <div className="row-actions">
-                                                    <button
-                                                        type="button"
-                                                        className="edit-btn"
-                                                        onClick={() =>
-                                                            startEdit(item)
+                                            {showUsage && (
+                                                <td>
+                                                    <span
+                                                        className={
+                                                            item.count > 0
+                                                                ? "usage-badge active"
+                                                                : "usage-badge"
                                                         }
                                                     >
-                                                        Düzenle
-                                                    </button>
+                                                        {item.count} kayıt
+                                                    </span>
+                                                </td>
+                                            )}
 
-                                                    <button
-                                                        type="button"
-                                                        className="delete-btn"
-                                                        onClick={() =>
-                                                            deleteVkn(item)
-                                                        }
-                                                    >
-                                                        Sil
-                                                    </button>
-                                                </div>
-                                            </td>
+                                            {showActions && (
+                                                <td>
+                                                    <div className="row-actions">
+                                                        {canEdit && (
+                                                            <button
+                                                                type="button"
+                                                                className="edit-btn"
+                                                                onClick={() => startEdit(item)}
+                                                            >
+                                                                Düzenle
+                                                            </button>
+                                                        )}
+
+                                                        {canDelete && (
+                                                            <button
+                                                                type="button"
+                                                                className="delete-btn"
+                                                                onClick={() => deleteVkn(item)}
+                                                            >
+                                                                Sil
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            )}
                                         </tr>
                                     ))
                                 )}

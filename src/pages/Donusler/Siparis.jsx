@@ -1,11 +1,31 @@
 ﻿// Siparis.jsx
 import React from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../context/AuthContext";
 import "./Siparis.css";
 
 const TABLES = {
     source: "donusler_musteri",
     activeReturns: "donusler_aktif_seferler",
+};
+
+const PAGE_KEY = "donus_siparis";
+
+const BUTTONS = {
+    NEW_VALUE: "new_value",
+    SELECT_CUSTOMER: "select_customer",
+    SELECT_ROUTE: "select_route",
+    PREVIEW_ORDER: "preview_order",
+    OPEN_ORDERS: "open_orders",
+    REFRESH: "refresh",
+};
+
+const COLUMNS = {
+    CUSTOMER: "Müşteri",
+    LOADING_PLACE: "Yükleme Yeri",
+    DELIVERY_PLACE: "Teslim Yeri",
+    NAVLUN: "Navlun",
+    DATE: "Sevk Tarihi",
 };
 
 const todayString = () =>
@@ -25,6 +45,23 @@ const formatDateTime = (value) => {
 };
 
 export default function Siparis() {
+    const { canPage, canButton, canColumn } = useAuth();
+
+    const canViewPage = canPage(PAGE_KEY);
+
+    const canNewValue = canButton(PAGE_KEY, BUTTONS.NEW_VALUE);
+    const canSelectCustomer = canButton(PAGE_KEY, BUTTONS.SELECT_CUSTOMER);
+    const canSelectRoute = canButton(PAGE_KEY, BUTTONS.SELECT_ROUTE);
+    const canPreviewOrder = canButton(PAGE_KEY, BUTTONS.PREVIEW_ORDER);
+    const canOpenOrders = canButton(PAGE_KEY, BUTTONS.OPEN_ORDERS);
+    const canRefresh = canButton(PAGE_KEY, BUTTONS.REFRESH);
+
+    const canSeeCustomer = canColumn(PAGE_KEY, COLUMNS.CUSTOMER);
+    const canSeeLoadingPlace = canColumn(PAGE_KEY, COLUMNS.LOADING_PLACE);
+    const canSeeDeliveryPlace = canColumn(PAGE_KEY, COLUMNS.DELIVERY_PLACE);
+    const canSeeNavlun = canColumn(PAGE_KEY, COLUMNS.NAVLUN);
+    const canSeeDate = canColumn(PAGE_KEY, COLUMNS.DATE);
+
     const [loading, setLoading] = React.useState(true);
     const [adding, setAdding] = React.useState(false);
     const [openingOrders, setOpeningOrders] = React.useState(false);
@@ -71,8 +108,9 @@ export default function Siparis() {
     }, []);
 
     React.useEffect(() => {
+        if (!canViewPage) return;
         fetchSource();
-    }, [fetchSource]);
+    }, [fetchSource, canViewPage]);
 
     const allCustomers = React.useMemo(() => {
         const map = new Map();
@@ -108,12 +146,22 @@ export default function Siparis() {
     }, [sourceRows, selectedCustomer]);
 
     function selectCustomer(name) {
+        if (!canSelectCustomer) {
+            showToast("Müşteri seçme yetkiniz yok.", "warning");
+            return;
+        }
+
         setSelectedCustomer(name);
         setSelectedRoute(null);
         setPreviewOrder(null);
     }
 
     function handleSaveOrder() {
+        if (!canPreviewOrder) {
+            showToast("Siparişi önizlemeye ekleme yetkiniz yok.", "warning");
+            return;
+        }
+
         if (!selectedCustomer || !selectedRoute) {
             showToast("Müşteri ve rota seçilmelidir.", "warning");
             return;
@@ -146,6 +194,11 @@ export default function Siparis() {
     }
 
     async function handleOpenOrders() {
+        if (!canOpenOrders) {
+            showToast("Siparişleri açma yetkiniz yok.", "warning");
+            return;
+        }
+
         if (createdOrders.length === 0) {
             showToast("Aktarılacak sipariş yok.", "warning");
             return;
@@ -220,6 +273,11 @@ export default function Siparis() {
         showToast("Siparişler aktif sefere aktarıldı.");
     }
     async function handleAddNew() {
+        if (!canNewValue) {
+            showToast("Yeni değer ekleme yetkiniz yok.", "warning");
+            return;
+        }
+
         const p = {
             musteri_adi: newValues.musteri_adi.trim(),
             yukleme_yeri: newValues.yukleme_yeri.trim(),
@@ -264,7 +322,15 @@ export default function Siparis() {
         );
     }
 
-    const canSave = selectedCustomer && selectedRoute;
+    const canSave = canPreviewOrder && selectedCustomer && selectedRoute;
+
+    if (!canViewPage) {
+        return (
+            <div className="sp-page">
+                <div className="sp-loading">Bu sayfaya erişim yetkiniz yok.</div>
+            </div>
+        );
+    }
 
     return (
         <div className="sp-page">
@@ -288,28 +354,32 @@ export default function Siparis() {
                 <div className="sp-header-right">
                     <span className="sp-date-pill">📅 {todayString()}</span>
 
-                    <button
-                        className="sp-icon-btn"
-                        onClick={fetchSource}
-                        disabled={loading}
-                        title="Yenile"
-                    >
-                        ↻
-                    </button>
+                    {canRefresh && (
+                        <button
+                            className="sp-icon-btn"
+                            onClick={fetchSource}
+                            disabled={loading}
+                            title="Yenile"
+                        >
+                            ↻
+                        </button>
+                    )}
 
-                    <button
-                        className="sp-add-btn"
-                        onClick={() => {
-                            setAddMode(selectedCustomer ? "existing" : "new");
-                            setNewValues((p) => ({
-                                ...p,
-                                musteri_adi: selectedCustomer || "",
-                            }));
-                            setDialogOpen(true);
-                        }}
-                    >
-                        + Yeni değer
-                    </button>
+                    {canNewValue && (
+                        <button
+                            className="sp-add-btn"
+                            onClick={() => {
+                                setAddMode(selectedCustomer ? "existing" : "new");
+                                setNewValues((p) => ({
+                                    ...p,
+                                    musteri_adi: selectedCustomer || "",
+                                }));
+                                setDialogOpen(true);
+                            }}
+                        >
+                            + Yeni değer
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -362,18 +432,19 @@ export default function Siparis() {
                                     <button
                                         key={c.name}
                                         className={`sp-customer-card${selectedCustomer === c.name
-                                                ? " sp-customer-card--active"
-                                                : ""
+                                            ? " sp-customer-card--active"
+                                            : ""
                                             }`}
                                         onClick={() => selectCustomer(c.name)}
+                                        disabled={!canSelectCustomer}
                                     >
                                         <div className="sp-customer-initial">
-                                            {c.name[0]}
+                                            {canSeeCustomer ? c.name[0] : "M"}
                                         </div>
 
                                         <div className="sp-customer-info">
                                             <div className="sp-customer-name">
-                                                {c.name}
+                                                {canSeeCustomer ? c.name : "Müşteri"}
                                             </div>
                                             <div className="sp-customer-meta">
                                                 {c.count} rota
@@ -391,7 +462,7 @@ export default function Siparis() {
                         <div className="sp-col">
                             <div className="sp-section-label">
                                 {selectedCustomer
-                                    ? `${selectedCustomer} — rotalar`
+                                    ? `${canSeeCustomer ? selectedCustomer : "Seçili müşteri"} — rotalar`
                                     : "Rota"}
 
                                 {selectedCustomer && (
@@ -419,14 +490,20 @@ export default function Siparis() {
                                             <button
                                                 key={row.id}
                                                 className={`sp-route-card${isActive
-                                                        ? " sp-route-card--active"
-                                                        : ""
+                                                    ? " sp-route-card--active"
+                                                    : ""
                                                     }`}
-                                                onClick={() =>
+                                                onClick={() => {
+                                                    if (!canSelectRoute) {
+                                                        showToast("Rota seçme yetkiniz yok.", "warning");
+                                                        return;
+                                                    }
+
                                                     setSelectedRoute(
                                                         isActive ? null : row
-                                                    )
-                                                }
+                                                    );
+                                                }}
+                                                disabled={!canSelectRoute}
                                             >
                                                 <div className="sp-route-dots">
                                                     <div className="sp-route-dot sp-route-dot--from" />
@@ -436,18 +513,18 @@ export default function Siparis() {
 
                                                 <div className="sp-route-info">
                                                     <div className="sp-route-from">
-                                                        {row.yukleme_yeri}
+                                                        {canSeeLoadingPlace ? row.yukleme_yeri : "—"}
                                                     </div>
                                                     <div className="sp-route-arrow">
                                                         →
                                                     </div>
                                                     <div className="sp-route-to">
-                                                        {row.teslim_yeri}
+                                                        {canSeeDeliveryPlace ? row.teslim_yeri : "—"}
                                                     </div>
                                                 </div>
 
                                                 <div className="sp-route-navlun">
-                                                    {row.navlun
+                                                    {canSeeNavlun && row.navlun
                                                         ? `₺${Number(
                                                             row.navlun
                                                         ).toLocaleString(
@@ -470,24 +547,24 @@ export default function Siparis() {
                         <div className="sp-confirm-chips">
                             <span className="sp-chip">
                                 <span className="sp-chip-label">Müşteri</span>
-                                {selectedCustomer || "—"}
+                                {canSeeCustomer ? selectedCustomer || "—" : "—"}
                             </span>
 
                             <span className="sp-chip-sep">›</span>
 
                             <span className="sp-chip">
                                 <span className="sp-chip-label">Yükleme</span>
-                                {selectedRoute?.yukleme_yeri || "—"}
+                                {canSeeLoadingPlace ? selectedRoute?.yukleme_yeri || "—" : "—"}
                             </span>
 
                             <span className="sp-chip-sep">›</span>
 
                             <span className="sp-chip">
                                 <span className="sp-chip-label">Teslim</span>
-                                {selectedRoute?.teslim_yeri || "—"}
+                                {canSeeDeliveryPlace ? selectedRoute?.teslim_yeri || "—" : "—"}
                             </span>
 
-                            {selectedRoute?.navlun && (
+                            {canSeeNavlun && selectedRoute?.navlun && (
                                 <>
                                     <span className="sp-chip-sep">›</span>
                                     <span className="sp-chip sp-chip--navlun">
@@ -500,6 +577,7 @@ export default function Siparis() {
                             )}
                         </div>
 
+                        {canPreviewOrder && (
                             <button
                                 className="sp-save-btn"
                                 onClick={handleSaveOrder}
@@ -507,7 +585,8 @@ export default function Siparis() {
                             >
                                 Siparişi önizlemeye ekle →
                             </button>
-                        </div>
+                        )}
+                    </div>
 
                     {previewOrder && (
                         <div className="sp-preview">
@@ -517,7 +596,7 @@ export default function Siparis() {
                                         Sipariş önizleme
                                     </div>
                                     <div className="sp-preview-title">
-                                        {previewOrder.musteri_adi}
+                                        {canSeeCustomer ? previewOrder.musteri_adi : "Sipariş"}
                                     </div>
                                 </div>
 
@@ -527,31 +606,39 @@ export default function Siparis() {
                             </div>
 
                             <div className="sp-preview-grid">
-                                <div className="sp-preview-item">
-                                    <span>Sevk tarihi</span>
-                                    <strong>{previewOrder.sevk_tarihi}</strong>
-                                </div>
+                                {canSeeDate && (
+                                    <div className="sp-preview-item">
+                                        <span>Sevk tarihi</span>
+                                        <strong>{previewOrder.sevk_tarihi}</strong>
+                                    </div>
+                                )}
 
-                                <div className="sp-preview-item">
-                                    <span>Yükleme</span>
-                                    <strong>{previewOrder.yukleme_yeri}</strong>
-                                </div>
+                                {canSeeLoadingPlace && (
+                                    <div className="sp-preview-item">
+                                        <span>Yükleme</span>
+                                        <strong>{previewOrder.yukleme_yeri}</strong>
+                                    </div>
+                                )}
 
-                                <div className="sp-preview-item">
-                                    <span>Teslim</span>
-                                    <strong>{previewOrder.varis1}</strong>
-                                </div>
+                                {canSeeDeliveryPlace && (
+                                    <div className="sp-preview-item">
+                                        <span>Teslim</span>
+                                        <strong>{previewOrder.varis1}</strong>
+                                    </div>
+                                )}
 
-                                <div className="sp-preview-item">
-                                    <span>Navlun</span>
-                                    <strong>
-                                        {previewOrder.navlun
-                                            ? `₺${Number(
-                                                previewOrder.navlun
-                                            ).toLocaleString("tr-TR")}`
-                                            : "—"}
-                                    </strong>
-                                </div>
+                                {canSeeNavlun && (
+                                    <div className="sp-preview-item">
+                                        <span>Navlun</span>
+                                        <strong>
+                                            {previewOrder.navlun
+                                                ? `₺${Number(
+                                                    previewOrder.navlun
+                                                ).toLocaleString("tr-TR")}`
+                                                : "—"}
+                                        </strong>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="sp-preview-footer">
@@ -573,13 +660,15 @@ export default function Siparis() {
                                 {createdOrders.length}
                             </span>
 
-                            <button
-                                className="sp-open-orders-btn"
-                                onClick={handleOpenOrders}
-                                disabled={openingOrders || createdOrders.length === 0}
-                            >
-                                {openingOrders ? "Aktarılıyor..." : "Siparişleri aç"}
-                            </button>
+                            {canOpenOrders && (
+                                <button
+                                    className="sp-open-orders-btn"
+                                    onClick={handleOpenOrders}
+                                    disabled={openingOrders || createdOrders.length === 0}
+                                >
+                                    {openingOrders ? "Aktarılıyor..." : "Siparişleri aç"}
+                                </button>
+                            )}
                         </div>
                     </div>
                     <div className="sp-orders-list">
@@ -589,15 +678,15 @@ export default function Siparis() {
 
                                 <div className="sp-order-info">
                                     <span className="sp-order-customer">
-                                        {order.musteri_adi}
+                                        {canSeeCustomer ? order.musteri_adi : "Sipariş"}
                                     </span>
                                     <span className="sp-order-route">
-                                        {order.yukleme_yeri} → {order.varis1}
+                                        {canSeeLoadingPlace ? order.yukleme_yeri : "—"} → {canSeeDeliveryPlace ? order.varis1 : "—"}
                                     </span>
                                 </div>
 
                                 <div className="sp-order-meta">
-                                    {order.navlun && (
+                                    {canSeeNavlun && order.navlun && (
                                         <span className="sp-order-navlun">
                                             ₺
                                             {Number(
@@ -607,7 +696,7 @@ export default function Siparis() {
                                     )}
 
                                     <span className="sp-order-time">
-                                        {formatDateTime(order.created_at)}
+                                        {canSeeDate ? formatDateTime(order.created_at) : ""}
                                     </span>
                                 </div>
                             </div>
@@ -616,7 +705,7 @@ export default function Siparis() {
                 </div>
             )}
 
-            {dialogOpen && (
+            {dialogOpen && canNewValue && (
                 <div
                     className="sp-modal-backdrop"
                     onClick={() => setDialogOpen(false)}
@@ -691,7 +780,7 @@ export default function Siparis() {
                                         <option value="">Müşteri seçin</option>
                                         {allCustomers.map((c) => (
                                             <option key={c.name} value={c.name}>
-                                                {c.name}
+                                                {canSeeCustomer ? c.name : "Müşteri"}
                                             </option>
                                         ))}
                                     </select>

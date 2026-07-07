@@ -1,5 +1,6 @@
 ﻿import { useMemo, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import "./Layout.css";
 
 type MenuKey = "bim" | "donus" | "arac" | "ek" | null;
@@ -10,44 +11,48 @@ interface LayoutProps {
 
 const MENU_GROUPS = {
     bim: [
-        { to: "/bimafyon/planlama", label: "Planlama" },
-        { to: "/bimafyon/manuelsiparis", label: "Manuel Sipariş" },
-        { to: "/bimafyon/aktifseferler", label: "Aktif Seferler" },
-        { to: "/bimafyon/silinenseferler", label: "Silinen Seferler" },
-        { to: "/bimafyon/tamamlananseferler", label: "Tamamlanan Seferler" },
+        { to: "/bimafyon/planlama", label: "Planlama", pageKey: "bim_planlama" },
+        { to: "/bimafyon/manuelsiparis", label: "Manuel Sipariş", pageKey: "bim_manuel" },
+        { to: "/bimafyon/aktifseferler", label: "Aktif Seferler", pageKey: "bim_aktif" },
+        { to: "/bimafyon/silinenseferler", label: "Silinen Seferler", pageKey: "bim_silinen" },
+        { to: "/bimafyon/tamamlananseferler", label: "Tamamlanan Seferler", pageKey: "bim_tamamlanan" },
     ],
     donus: [
-        { to: "/donusler/siparis", label: "Sipariş Oluştur" },
-        { to: "/donusler/plakaatama", label: "Plaka Atama" },
-        { to: "/donusler/tamamlananseferler", label: "Tamamlanan Seferler" },
-        { to: "/donusler/navlunlar", label: "Navlunlar" },
+        { to: "/donusler/siparis", label: "Sipariş Oluştur", pageKey: "donus_siparis" },
+        { to: "/donusler/plakaatama", label: "Plaka Atama", pageKey: "donus_plaka" },
+        { to: "/donusler/tamamlananseferler", label: "Tamamlanan Seferler", pageKey: "donus_tamamlanan" },
+        { to: "/donusler/navlunlar", label: "Navlunlar", pageKey: "donus_navlun" },
     ],
-    arac: [{ to: "/aracyonetimi/araclar", label: "Araçlar" }],
+    arac: [
+        { to: "/aracyonetimi/araclar", label: "Araçlar", pageKey: "araclar" },
+    ],
     ek: [
-        { to: "/ekkayitlar/vkn", label: "VKN Ekle" },
-        { to: "/ekkayitlar/ugrama", label: "Uğrama Şartı Ekle" },
-        { to: "/ekkayitlar/navlun", label: "Navlun Şartı Ekle" },
+        { to: "/ekkayitlar/vkn", label: "VKN Ekle", pageKey: "ekkayit_vkn" },
+        { to: "/ekkayitlar/ugrama", label: "Uğrama Şartı Ekle", pageKey: "ekkayit_ugrama" },
+        { to: "/ekkayitlar/navlun", label: "Navlun Şartı Ekle", pageKey: "ekkayit_navlun" },
     ],
 };
 
 function Layout({ onOpenYetkiPanel }: LayoutProps) {
     const navigate = useNavigate();
+    const { user, canPage, logout } = useAuth();
     const [openMenu, setOpenMenu] = useState<MenuKey>(null);
 
-    const aktifKullanici = useMemo(() => {
-        try {
-            return JSON.parse(localStorage.getItem("aktifKullanici") || "null");
-        } catch {
-            return null;
-        }
-    }, []);
+    const visibleMenuGroups = useMemo(() => {
+        return {
+            bim: MENU_GROUPS.bim.filter((item) => canPage(item.pageKey)),
+            donus: MENU_GROUPS.donus.filter((item) => canPage(item.pageKey)),
+            arac: MENU_GROUPS.arac.filter((item) => canPage(item.pageKey)),
+            ek: MENU_GROUPS.ek.filter((item) => canPage(item.pageKey)),
+        };
+    }, [canPage]);
 
     const kullaniciAdi =
-        aktifKullanici?.ad || aktifKullanici?.kullanici_adi || "Kullanıcı";
+        user?.ad || user?.kullanici_adi || "Kullanıcı";
 
-    const kullaniciKodu = aktifKullanici?.kullanici_adi || "kullanici";
+    const kullaniciKodu = user?.kullanici_adi || "kullanici";
 
-    const rol = String(aktifKullanici?.rol || "kullanici")
+    const rol = String(user?.rol || "kullanici")
         .trim()
         .toLowerCase();
 
@@ -62,13 +67,39 @@ function Layout({ onOpenYetkiPanel }: LayoutProps) {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem("aktifKullanici");
+        logout();
         navigate("/login");
     };
 
     const handleOpenYetkiPanel = () => {
         closeMenu();
         onOpenYetkiPanel();
+    };
+
+    const renderMenuGroup = (
+        key: Exclude<MenuKey, null>,
+        title: string,
+        items: typeof MENU_GROUPS.bim
+    ) => {
+        if (items.length === 0) return null;
+
+        return (
+            <div className="menu-item">
+                <button type="button" onClick={() => toggleMenu(key)}>
+                    {title}
+                </button>
+
+                {openMenu === key && (
+                    <div className="menu-dropdown">
+                        {items.map((item) => (
+                            <Link key={item.to} to={item.to} onClick={closeMenu}>
+                                {item.label}
+                            </Link>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
     };
 
     return (
@@ -85,69 +116,10 @@ function Layout({ onOpenYetkiPanel }: LayoutProps) {
                 </Link>
 
                 <nav className="app-navbar">
-                    <div className="menu-item">
-                        <button type="button" onClick={() => toggleMenu("bim")}>
-                            BİM AFYON
-                        </button>
-
-                        {openMenu === "bim" && (
-                            <div className="menu-dropdown">
-                                {MENU_GROUPS.bim.map((item) => (
-                                    <Link key={item.to} to={item.to} onClick={closeMenu}>
-                                        {item.label}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="menu-item">
-                        <button type="button" onClick={() => toggleMenu("donus")}>
-                            DÖNÜŞLER
-                        </button>
-
-                        {openMenu === "donus" && (
-                            <div className="menu-dropdown">
-                                {MENU_GROUPS.donus.map((item) => (
-                                    <Link key={item.to} to={item.to} onClick={closeMenu}>
-                                        {item.label}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="menu-item">
-                        <button type="button" onClick={() => toggleMenu("arac")}>
-                            ARAÇ YÖNETİMİ
-                        </button>
-
-                        {openMenu === "arac" && (
-                            <div className="menu-dropdown">
-                                {MENU_GROUPS.arac.map((item) => (
-                                    <Link key={item.to} to={item.to} onClick={closeMenu}>
-                                        {item.label}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="menu-item">
-                        <button type="button" onClick={() => toggleMenu("ek")}>
-                            EK KAYITLAR
-                        </button>
-
-                        {openMenu === "ek" && (
-                            <div className="menu-dropdown">
-                                {MENU_GROUPS.ek.map((item) => (
-                                    <Link key={item.to} to={item.to} onClick={closeMenu}>
-                                        {item.label}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    {renderMenuGroup("bim", "BİM AFYON", visibleMenuGroups.bim)}
+                    {renderMenuGroup("donus", "DÖNÜŞLER", visibleMenuGroups.donus)}
+                    {renderMenuGroup("arac", "ARAÇ YÖNETİMİ", visibleMenuGroups.arac)}
+                    {renderMenuGroup("ek", "EK KAYITLAR", visibleMenuGroups.ek)}
 
                     {isAdmin && (
                         <button

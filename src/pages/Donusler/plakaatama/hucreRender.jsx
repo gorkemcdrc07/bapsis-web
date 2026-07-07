@@ -5,10 +5,12 @@ export function renderPlakaAtamaHucre({
     editingStartValuesRef,
     updateCell,
     saveCellOnBlur,
-    options,
+    options = {},
     setAracPanelRow,
     toggleActionMenu,
     cellLogs,
+    canSelectVehicle = false,
+    canActions = true,
 }) {
     function formatDate(value) {
         if (!value) return "-";
@@ -23,9 +25,7 @@ export function renderPlakaAtamaHucre({
         const alan = column.label || column.title || column.key;
         const logs = cellLogs?.[`${row.id}_${alan}`] || [];
 
-        if (!logs.length) {
-            return cellContent;
-        }
+        if (!logs.length) return cellContent;
 
         return (
             <div className="change-cell-wrap">
@@ -63,11 +63,13 @@ export function renderPlakaAtamaHucre({
     }
 
     if (column.key === "actions") {
+        if (!canActions) return null;
+
         return (
             <button
                 type="button"
                 className="dpa-action-menu-btn"
-                onClick={(event) => toggleActionMenu(event, row)}
+                onClick={(event) => toggleActionMenu?.(event, row)}
             >
                 ⋯
             </button>
@@ -75,17 +77,23 @@ export function renderPlakaAtamaHucre({
     }
 
     if (column.key === "id") {
-        return withChangeHistory(
-            <span className="id-cell">#{row.id}</span>
-        );
+        return withChangeHistory(<span className="id-cell">#{row.id}</span>);
     }
 
     if (column.key === "cekici") {
+        if (!canSelectVehicle) {
+            return withChangeHistory(
+                <span className={row.cekici ? "table-vehicle-btn selected readonly" : "table-vehicle-btn readonly"}>
+                    {row.cekici || "-"}
+                </span>
+            );
+        }
+
         return withChangeHistory(
             <button
                 type="button"
                 className={row.cekici ? "table-vehicle-btn selected" : "table-vehicle-btn"}
-                onClick={() => setAracPanelRow(row)}
+                onClick={() => setAracPanelRow?.(row)}
             >
                 {row.cekici || "Çekici seç"}
             </button>
@@ -104,8 +112,8 @@ export function renderPlakaAtamaHucre({
                         editingStartValuesRef.current[`${row.id}_telefon`] =
                             row.telefon ?? "";
                     }}
-                    onChange={(e) => updateCell(rowIndex, "telefon", e.target.value)}
-                    onBlur={(e) => saveCellOnBlur(row.id, "telefon", e.target.value)}
+                    onChange={(e) => updateCell?.(rowIndex, "telefon", e.target.value)}
+                    onBlur={(e) => saveCellOnBlur?.(row.id, "telefon", e.target.value)}
                 />
 
                 <a
@@ -134,14 +142,16 @@ export function renderPlakaAtamaHucre({
                         row[column.key] ?? "";
                 }}
                 onChange={(e) => {
-                    updateCell(rowIndex, column.key, e.target.value);
-                    saveCellOnBlur(row.id, column.key, e.target.value);
+                    updateCell?.(rowIndex, column.key, e.target.value);
+                    saveCellOnBlur?.(row.id, column.key, e.target.value);
                 }}
             >
                 <option value="">Seçiniz</option>
+
                 {value && !list.includes(value) && (
                     <option value={value}>{value}</option>
                 )}
+
                 {list.map((item) => (
                     <option key={item} value={item}>
                         {item}
@@ -160,8 +170,8 @@ export function renderPlakaAtamaHucre({
                 editingStartValuesRef.current[`${row.id}_${column.key}`] =
                     row[column.key] ?? "";
             }}
-            onChange={(e) => updateCell(rowIndex, column.key, e.target.value)}
-            onBlur={(e) => saveCellOnBlur(row.id, column.key, e.target.value)}
+            onChange={(e) => updateCell?.(rowIndex, column.key, e.target.value)}
+            onBlur={(e) => saveCellOnBlur?.(row.id, column.key, e.target.value)}
         />
     );
 }

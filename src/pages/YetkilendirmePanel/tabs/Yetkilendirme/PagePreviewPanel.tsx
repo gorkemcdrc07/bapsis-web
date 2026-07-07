@@ -1,4 +1,6 @@
-﻿import type { SayfaDef, SayfaPerm } from "../../types";
+﻿import { useState } from "react";
+import type { SayfaDef, SayfaPerm } from "../../types";
+import { PERMISSION_LABELS } from "../../utils/constants";
 
 interface PagePreviewPanelProps {
     page: SayfaDef;
@@ -13,8 +15,13 @@ interface PagePreviewPanelProps {
 
 const SAMPLE_ROW_COUNT = 5;
 
+function getPermissionLabel(key: string) {
+    return PERMISSION_LABELS[key] || key;
+}
+
 function sampleValue(column: string, rowIndex: number): string {
-    const c = column.toLocaleLowerCase("tr-TR");
+    const label = getPermissionLabel(column);
+    const c = label.toLocaleLowerCase("tr-TR");
 
     if (c.includes("tarih")) {
         const days = ["12.04.2025", "13.04.2025", "13.04.2025", "14.04.2025", "15.04.2025"];
@@ -42,7 +49,7 @@ function sampleValue(column: string, rowIndex: number): string {
         return `${(1250 + rowIndex * 340).toLocaleString("tr-TR")} ₺`;
     }
     if (c.includes("palet")) return String(4 + rowIndex);
-    if (c.includes("sürücü")) {
+    if (c.includes("sürücü") || c.includes("şoför")) {
         const names = ["A. Yılmaz", "M. Kaya", "S. Demir", "E. Şahin", "B. Aydın"];
         return names[rowIndex % names.length];
     }
@@ -58,8 +65,73 @@ function sampleValue(column: string, rowIndex: number): string {
         const places = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya"];
         return places[rowIndex % places.length];
     }
-
     return "—";
+}
+
+interface PermSectionProps {
+    title: string;
+    icon: string;
+    items: string[];
+    values: Record<string, boolean>;
+    locked: boolean;
+    onToggle: (item: string) => void;
+    onAll: (value: boolean) => void;
+}
+
+function PermSection({ title, icon, items, values, locked, onToggle, onAll }: PermSectionProps) {
+    const activeCount = items.filter((i) => values[i]).length;
+
+    return (
+        <div className="ypw-perm-section">
+            <div className="ypw-perm-section-head">
+                <span>
+                    <i className={`ti ${icon}`} />
+                    {title}
+                    <em>{activeCount}/{items.length}</em>
+                </span>
+
+                <div className="ypw-perm-section-actions">
+                    <button
+                        type="button"
+                        className="ypw-perm-section-action"
+                        disabled={locked}
+                        onClick={() => onAll(true)}
+                    >
+                        Tümünü Aç
+                    </button>
+                    <button
+                        type="button"
+                        className="ypw-perm-section-action"
+                        disabled={locked}
+                        onClick={() => onAll(false)}
+                    >
+                        Tümünü Kapat
+                    </button>
+                </div>
+            </div>
+
+            <div className="ypw-perm-chip-grid">
+                {items.map((item) => {
+                    const on = Boolean(values[item]);
+                    return (
+                        <label
+                            key={item}
+                            className={`ypw-perm-chip ${on ? "on" : ""} ${locked ? "disabled" : ""}`}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={on}
+                                disabled={locked}
+                                onChange={() => onToggle(item)}
+                            />
+                            <i className={`ti ${on ? "ti-square-rounded-check" : "ti-square-rounded"}`} />
+                            {getPermissionLabel(item)}
+                        </label>
+                    );
+                })}
+            </div>
+        </div>
+    );
 }
 
 export default function PagePreviewPanel({
@@ -72,6 +144,8 @@ export default function PagePreviewPanel({
     setAllColumns,
     setAllButtons,
 }: PagePreviewPanelProps) {
+    const [previewOpen, setPreviewOpen] = useState(false);
+
     const activeColumns = page.columns.filter((column) => perm.cols[column]).length;
     const activeButtons = page.buttons.filter((button) => perm.btns[button]).length;
 
@@ -87,6 +161,7 @@ export default function PagePreviewPanel({
                     <span className="ypw-preview-head-counts">
                         {activeColumns}/{page.columns.length} sütun · {activeButtons}/{page.buttons.length} buton
                     </span>
+
                     <button
                         type="button"
                         className={`ypw-access-switch ${perm.page ? "on" : ""}`}
@@ -106,120 +181,83 @@ export default function PagePreviewPanel({
                 </div>
             )}
 
-            <div className="ypw-real-screen">
-                {/* Sahte sayfa toolbar'ı — gerçek butonlar */}
-                <div className="ypw-real-toolbar">
-                    <div className="ypw-real-toolbar-left">
-                        {page.buttons.map((button) => {
-                            const on = Boolean(perm.btns[button]);
-                            return (
-                                <button
-                                    key={button}
-                                    type="button"
-                                    className={`ypw-real-btn ${on ? "on" : "off"}`}
-                                    disabled={locked}
-                                    onClick={() => toggleButton(page.key, button)}
-                                    title={on ? "Bu buton görünür — kapatmak için tıkla" : "Bu buton gizli — açmak için tıkla"}
-                                >
-                                    {button}
-                                </button>
-                            );
-                        })}
-                    </div>
+            <PermSection
+                title="İşlem Butonları"
+                icon="ti-click"
+                items={page.buttons}
+                values={perm.btns}
+                locked={locked}
+                onToggle={(button) => toggleButton(page.key, button)}
+                onAll={(value) => setAllButtons(page.key, value)}
+            />
 
-                    <div className="ypw-real-toolbar-actions">
-                        <button
-                            type="button"
-                            className="ypw-real-toolbar-ghost"
-                            disabled={locked}
-                            onClick={() => setAllButtons(page.key, true)}
-                        >
-                            Tüm butonlar
-                        </button>
-                        <button
-                            type="button"
-                            className="ypw-real-toolbar-ghost"
-                            disabled={locked}
-                            onClick={() => setAllButtons(page.key, false)}
-                        >
-                            Hiçbiri
-                        </button>
-                    </div>
-                </div>
+            <PermSection
+                title="Görünür Sütunlar"
+                icon="ti-columns"
+                items={page.columns}
+                values={perm.cols}
+                locked={locked}
+                onToggle={(column) => toggleColumn(page.key, column)}
+                onAll={(value) => setAllColumns(page.key, value)}
+            />
 
-                {/* Sahte veri tablosu — gerçek sütunlar */}
-                <div className="ypw-real-table-wrap">
-                    <div className="ypw-real-table-toolbar">
-                        <span>Sütun başlığına tıklayarak sütunu aç/kapat</span>
-                        <div>
-                            <button
-                                type="button"
-                                className="ypw-real-toolbar-ghost"
-                                disabled={locked}
-                                onClick={() => setAllColumns(page.key, true)}
-                            >
-                                Tüm sütunlar
-                            </button>
-                            <button
-                                type="button"
-                                className="ypw-real-toolbar-ghost"
-                                disabled={locked}
-                                onClick={() => setAllColumns(page.key, false)}
-                            >
-                                Hiçbiri
-                            </button>
-                        </div>
-                    </div>
+            <div className="ypw-preview-collapse">
+                <button
+                    type="button"
+                    className="ypw-preview-collapse-head"
+                    onClick={() => setPreviewOpen((open) => !open)}
+                >
+                    <span>
+                        <i className="ti ti-table" />
+                        Canlı Önizleme
+                        <small>Kullanıcının gerçek ekranda göreceği hal</small>
+                    </span>
+                    <i className={`ti ti-chevron-down ypw-preview-collapse-chevron ${previewOpen ? "open" : ""}`} />
+                </button>
 
-                    <div className="ypw-real-table-scroll">
-                        <table className="ypw-real-table">
-                            <thead>
-                                <tr>
-                                    <th className="ypw-real-th-check">
-                                        <span className="ypw-real-checkbox" />
-                                    </th>
-                                    {page.columns.map((column) => {
-                                        const on = Boolean(perm.cols[column]);
-                                        return (
-                                            <th key={column}>
-                                                <button
-                                                    type="button"
-                                                    className={`ypw-real-th-btn ${on ? "on" : "off"}`}
-                                                    disabled={locked}
-                                                    onClick={() => toggleColumn(page.key, column)}
-                                                >
-                                                    {column}
-                                                    <i className={`ti ${on ? "ti-eye" : "ti-eye-off"}`} />
-                                                </button>
-                                            </th>
-                                        );
-                                    })}
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {Array.from({ length: SAMPLE_ROW_COUNT }).map((_, rowIndex) => (
-                                    <tr key={rowIndex}>
-                                        <td className="ypw-real-th-check">
+                {previewOpen && (
+                    <div className="ypw-real-table-wrap">
+                        <div className="ypw-real-table-scroll">
+                            <table className="ypw-real-table">
+                                <thead>
+                                    <tr>
+                                        <th className="ypw-real-th-check">
                                             <span className="ypw-real-checkbox" />
-                                        </td>
+                                        </th>
                                         {page.columns.map((column) => {
                                             const on = Boolean(perm.cols[column]);
                                             return (
-                                                <td
-                                                    key={column}
-                                                    className={on ? "" : "ypw-real-td-hidden"}
-                                                >
-                                                    {on ? sampleValue(column, rowIndex) : "•••"}
-                                                </td>
+                                                <th key={column}>
+                                                    <span className={`ypw-real-th-static ${on ? "on" : "off"}`}>
+                                                        {getPermissionLabel(column)}
+                                                        <i className={`ti ${on ? "ti-eye" : "ti-eye-off"}`} />
+                                                    </span>
+                                                </th>
                                             );
                                         })}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {Array.from({ length: SAMPLE_ROW_COUNT }).map((_, rowIndex) => (
+                                        <tr key={rowIndex}>
+                                            <td className="ypw-real-th-check">
+                                                <span className="ypw-real-checkbox" />
+                                            </td>
+                                            {page.columns.map((column) => {
+                                                const on = Boolean(perm.cols[column]);
+                                                return (
+                                                    <td key={column} className={on ? "" : "ypw-real-td-hidden"}>
+                                                        {on ? sampleValue(column, rowIndex) : "•••"}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

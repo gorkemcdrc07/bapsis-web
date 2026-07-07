@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import "./PlakaAtama.css";
 
 import {
@@ -77,7 +78,33 @@ async function saveChangeLogs(seferId, changes, islemTipi = "Güncelleme") {
     await degisiklikKaydiEkle(seferId, changes, islemTipi);
 }
 
+const PAGE_KEY = "donus_plaka";
+
+const BUTTONS = {
+    IMPORT_EXCEL: "import_excel",
+    EXPORT_EXCEL: "export_excel",
+    IRSALIYE: "irsaliye",
+    VIEW_SETTINGS: "view_settings",
+    SELECT_VEHICLE: "select_vehicle",
+    CHANGE_DRIVER: "change_driver",
+    DELETE_TRIP: "delete_trip",
+    COMPLETE_TRIP: "complete_trip",
+    SHOW_MAP: "show_map",
+};
 export default function PlakaAtama() {
+    const { canPage, canButton, canColumn } = useAuth();
+
+    const canViewPage = canPage(PAGE_KEY);
+    const canImportExcel = canButton(PAGE_KEY, BUTTONS.IMPORT_EXCEL);
+    const canExportExcel = canButton(PAGE_KEY, BUTTONS.EXPORT_EXCEL);
+    const canIrsaliye = canButton(PAGE_KEY, BUTTONS.IRSALIYE);
+    const canViewSettings = canButton(PAGE_KEY, BUTTONS.VIEW_SETTINGS);
+    const canSelectVehicle = canButton(PAGE_KEY, BUTTONS.SELECT_VEHICLE);
+    const canChangeDriver = canButton(PAGE_KEY, BUTTONS.CHANGE_DRIVER);
+    const canDeleteTrip = canButton(PAGE_KEY, BUTTONS.DELETE_TRIP);
+    const canCompleteTrip = canButton(PAGE_KEY, BUTTONS.COMPLETE_TRIP);
+    const canShowMap = canButton(PAGE_KEY, BUTTONS.SHOW_MAP);
+
     const [rows, setRows] = useState([]);
     const [columns, setColumns] = useState(columnsData);
 
@@ -122,12 +149,19 @@ export default function PlakaAtama() {
     const fileDragDepthRef = useRef(0);
 
     const visibleColumns = useMemo(() => {
-        return columns.filter((column) => !hiddenColumns.includes(column.key));
-    }, [columns, hiddenColumns]);
+        return columns.filter((column) => {
+            if (hiddenColumns.includes(column.key)) return false;
+            if (column.key === "actions") return true;
+            return canColumn(PAGE_KEY, column.key);
+        });
+    }, [columns, hiddenColumns, canColumn]);
 
     const hideableColumns = useMemo(() => {
-        return columns.filter((column) => column.key !== "actions");
-    }, [columns]);
+        return columns.filter((column) => {
+            if (column.key === "actions") return false;
+            return canColumn(PAGE_KEY, column.key);
+        });
+    }, [columns, canColumn]);
 
     const filteredColumnList = useMemo(() => {
         return sutunlariFiltrele(hideableColumns, columnSearch);
@@ -159,6 +193,7 @@ export default function PlakaAtama() {
     }, [currentPage, totalPages]);
 
     useEffect(() => {
+        if (!canViewPage) return;
         fetchRows();
         fetchAraclar();
         fetchChangeLogs();
@@ -171,7 +206,7 @@ export default function PlakaAtama() {
         });
 
         return cleanup;
-    }, []);
+    }, [canViewPage]);
     useEffect(() => {
         rowsRef.current = rows;
     }, [rows]);
@@ -218,6 +253,11 @@ export default function PlakaAtama() {
     }
 
     function openMapForRow(row) {
+        if (!canShowMap) {
+            showToast("Haritada gösterme yetkiniz yok.", "warning");
+            return;
+        }
+
         const device = freshlianceDevices.find(
             (item) =>
                 String(item.device_code || "").trim() ===
@@ -277,6 +317,11 @@ export default function PlakaAtama() {
     }
 
     async function deleteTrip(row) {
+        if (!canDeleteTrip) {
+            showToast("Sefer silme yetkiniz yok.", "warning");
+            return;
+        }
+
         if (!confirm("Bu sefer silinsin mi?")) return;
 
         const aktifKullanici = JSON.parse(
@@ -388,6 +433,12 @@ export default function PlakaAtama() {
     }
 
     async function handleExcelImport(event) {
+        if (!canImportExcel) {
+            showToast("Excel içe aktarma yetkiniz yok.", "warning");
+            event.target.value = "";
+            return;
+        }
+
         await excelDosyasiSecildi(event, processExcelFile);
     }
 
@@ -404,10 +455,22 @@ export default function PlakaAtama() {
     }
 
     async function handleDrop(event) {
+        if (!canImportExcel) {
+            event.preventDefault();
+            setIsDragActive(false);
+            showToast("Excel içe aktarma yetkiniz yok.", "warning");
+            return;
+        }
+
         await sayfaDrop(event, fileDragDepthRef, setIsDragActive, processExcelFile);
     }
 
     async function exportExcel() {
+        if (!canExportExcel) {
+            showToast("Excel aktarma yetkiniz yok.", "warning");
+            return;
+        }
+
         await exportPlakaAtamaExcel(rows);
     }
 
@@ -465,6 +528,8 @@ export default function PlakaAtama() {
     }
 
     function updateCell(rowIndex, key, value) {
+        if (!canColumn(PAGE_KEY, key)) return;
+
         const currentRow = paginatedRows[rowIndex];
         if (!currentRow?.id) return;
 
@@ -476,6 +541,12 @@ export default function PlakaAtama() {
     }
 
     async function saveCellOnBlur(rowId, key, value) {
+        if (!canColumn(PAGE_KEY, key)) {
+            showToast("Bu sütunu düzenleme yetkiniz yok.", "warning");
+            await fetchRows();
+            return;
+        }
+
         const currentRow = rowsRef.current.find((row) => row.id === rowId);
         if (!currentRow) return;
 
@@ -538,12 +609,22 @@ export default function PlakaAtama() {
     }
 
     async function selectArac(arac, selection) {
+        const secimTipi = selection?.type || "vehicle-change";
+
+        if (secimTipi === "driver-change" && !canChangeDriver) {
+            showToast("Şoför değiştirme yetkiniz yok.", "warning");
+            return;
+        }
+
+        if (secimTipi !== "driver-change" && !canSelectVehicle) {
+            showToast("Araç seçme yetkiniz yok.", "warning");
+            return;
+        }
+
         if (!aracPanelRow?.id) return;
 
         const currentRow = rowsRef.current.find((row) => row.id === aracPanelRow.id);
         if (!currentRow) return;
-
-        const secimTipi = selection?.type || "vehicle-change";
 
         const updatedRow =
             secimTipi === "driver-change"
@@ -643,6 +724,11 @@ export default function PlakaAtama() {
 
 
     async function completeTrip(row) {
+        if (!canCompleteTrip) {
+            showToast("Sefer tamamlama yetkiniz yok.", "warning");
+            return;
+        }
+
         await plakaAtamaSeferTamamla({
             row,
             plakaAtamaKaydiSil,
@@ -657,6 +743,10 @@ export default function PlakaAtama() {
     }
 
     function renderCell(row, rowIndex, column) {
+        if (column.key !== "actions" && !canColumn(PAGE_KEY, column.key)) {
+            return null;
+        }
+
         return renderPlakaAtamaHucre({
             row,
             rowIndex,
@@ -666,10 +756,29 @@ export default function PlakaAtama() {
             saveCellOnBlur,
             options,
             setAracPanelRow,
-            openActionRowId,
             toggleActionMenu,
             cellLogs,
+
+            canSelectVehicle,
+            canActions:
+                canSelectVehicle ||
+                canChangeDriver ||
+                canDeleteTrip ||
+                canCompleteTrip ||
+                canShowMap,
         });
+
+    }
+
+    if (!canViewPage) {
+        return (
+            <div className="dpa-page">
+                <div className="dpa-card">
+                    <h2>Erişim kısıtlı</h2>
+                    <p>Bu sayfayı görüntüleme yetkiniz yok.</p>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -725,6 +834,11 @@ export default function PlakaAtama() {
                     fileInputRef={fileInputRef}
                     excelImporting={excelImporting}
                     setShowIrsaliyePanel={setShowIrsaliyePanel}
+                    canImportExcel={canImportExcel}
+                    canExportExcel={canExportExcel}
+                    canIrsaliye={canIrsaliye}
+                    canViewSettings={canViewSettings}
+                    canRefresh={true}
                 />
 
                 <SutunPaneli
@@ -742,7 +856,7 @@ export default function PlakaAtama() {
                     visibleColumns={visibleColumns}
                     filteredRows={paginatedRows}
                     renderCell={renderCell}
-                    openMapForRow={openMapForRow}
+                    openMapForRow={canShowMap ? openMapForRow : undefined}
                     draggingColumnKey={draggingColumnKey}
                     dropTargetColumnKey={dropTargetColumnKey}
                     setDropTargetColumnKey={setDropTargetColumnKey}
@@ -804,12 +918,23 @@ export default function PlakaAtama() {
                 openActionRowId={openActionRowId}
                 actionMenuPosition={actionMenuPosition}
                 selectedActionRow={selectedActionRow}
+
                 setAracPanelRow={setAracPanelRow}
+
                 deleteTrip={deleteTrip}
+                completeTrip={completeTrip}
+
                 araclar={araclar}
                 fetchAraclar={fetchAraclar}
                 updateLocalRowVkn={updateLocalRowVkn}
+
                 openMapForRow={openMapForRow}
+
+                canSelectVehicle={canSelectVehicle}
+                canChangeDriver={canChangeDriver}
+                canDeleteTrip={canDeleteTrip}
+                canCompleteTrip={canCompleteTrip}
+                canShowMap={canShowMap}
             />
             <ExcelRevizyonModal
                 revisionChanges={revisionChanges}
@@ -828,11 +953,13 @@ export default function PlakaAtama() {
                 addMissingVehicle={addMissingVehicle}
             />
 
-            <IrsaliyeOkutModal
-                showIrsaliyePanel={showIrsaliyePanel}
-                setShowIrsaliyePanel={setShowIrsaliyePanel}
-                fetchRows={fetchRows}
-            />
+            {canIrsaliye && (
+                <IrsaliyeOkutModal
+                    showIrsaliyePanel={showIrsaliyePanel}
+                    setShowIrsaliyePanel={setShowIrsaliyePanel}
+                    fetchRows={fetchRows}
+                />
+            )}
 
             {mapOpen && selectedDevice && (
                 <div className="map-drawer">

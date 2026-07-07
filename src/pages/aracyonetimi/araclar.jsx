@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../context/AuthContext";
 import "./araclar.css";
 
 const emptyForm = {
@@ -14,6 +15,18 @@ const emptyForm = {
 };
 
 const FETCH_SIZE = 1000;
+const PAGE_KEY = "araclar";
+
+const COLUMN_KEYS = {
+    surucu: "Sürücü",
+    cekici: "Çekici Plaka",
+    dorse: "Dorse Plaka",
+    tc: "TC",
+    telefon: "Telefon",
+    vkn: "VKN",
+    datalogerNo: "Dataloger No",
+};
+
 
 function normalizePlate(value) {
     return String(value || "").toLocaleUpperCase("tr-TR").replace(/\s/g, "");
@@ -124,6 +137,27 @@ const IconTruck = () => (
 );
 
 export default function Araclar() {
+    const { canPage, canButton, canColumn } = useAuth();
+
+    const canViewPage = canPage(PAGE_KEY);
+    const canCreateVehicle = canButton(PAGE_KEY, "create_vehicle");
+    const canEditVehicle = canButton(PAGE_KEY, "edit_vehicle");
+    const canDeleteVehicle = canButton(PAGE_KEY, "delete");
+    const canExportExcel = canButton(PAGE_KEY, "export_excel");
+    const canCardView = canButton(PAGE_KEY, "card_view");
+
+    const canShowColumn = (columnKey) => canColumn(PAGE_KEY, columnKey);
+
+    const visibleTableColumns = [
+        { key: "surucu", label: "Sürücü", allowed: canShowColumn(COLUMN_KEYS.surucu) },
+        { key: "cekici", label: "Çekici", allowed: canShowColumn(COLUMN_KEYS.cekici) },
+        { key: "dorse", label: "Dorse", allowed: canShowColumn(COLUMN_KEYS.dorse) },
+        { key: "tc", label: "TC", allowed: canShowColumn(COLUMN_KEYS.tc) },
+        { key: "telefon", label: "Telefon", allowed: canShowColumn(COLUMN_KEYS.telefon) },
+        { key: "vkn", label: "VKN", allowed: canShowColumn(COLUMN_KEYS.vkn) },
+        { key: "datalogerNo", label: "Dataloger", allowed: canShowColumn(COLUMN_KEYS.datalogerNo) },
+    ].filter((column) => column.allowed);
+
     const [araclar, setAraclar] = useState([]);
     const [vknler, setVknler] = useState([]);
     const [form, setForm] = useState(emptyForm);
@@ -196,9 +230,11 @@ export default function Araclar() {
     }
 
     useEffect(() => {
+        if (!canViewPage) return;
         fetchVknler();
         fetchAraclar();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [canViewPage]);
 
     const filteredAraclar = useMemo(() => {
         const value = search.toLocaleLowerCase("tr-TR").trim();
@@ -273,6 +309,11 @@ export default function Araclar() {
     }
 
     function startEdit(item) {
+        if (!canEditVehicle) {
+            showToast("Araç düzenleme yetkiniz yok.", "error");
+            return;
+        }
+
         setEditingId(item.id);
         setForm({
             cekici: item.cekici || "",
@@ -289,6 +330,16 @@ export default function Araclar() {
 
     async function handleSubmit(e) {
         e.preventDefault();
+
+        if (editingId && !canEditVehicle) {
+            showToast("Araç güncelleme yetkiniz yok.", "error");
+            return;
+        }
+
+        if (!editingId && !canCreateVehicle) {
+            showToast("Yeni araç ekleme yetkiniz yok.", "error");
+            return;
+        }
 
         if (!form.cekici && !form.dorse && !form.surucu) {
             showToast("En az çekici, dorse veya sürücü alanlarından biri dolu olmalı.", "warning");
@@ -327,6 +378,11 @@ export default function Araclar() {
     }
 
     async function deleteArac(id) {
+        if (!canDeleteVehicle) {
+            showToast("Araç silme yetkiniz yok.", "error");
+            return;
+        }
+
         if (!confirm("Bu araç kaydı silinsin mi?")) return;
 
         const { error } = await supabase.from("araclar").delete().eq("id", id);
@@ -343,6 +399,11 @@ export default function Araclar() {
     }
 
     function exportExcel() {
+        if (!canExportExcel) {
+            showToast("Excel aktarım yetkiniz yok.", "error");
+            return;
+        }
+
         if (!filteredAraclar.length) {
             showToast("Aktarılacak kayıt bulunamadı.", "warning");
             return;
@@ -378,6 +439,19 @@ export default function Araclar() {
     const totalCekici = araclar.filter((a) => a.cekici).length;
     const totalDorse = araclar.filter((a) => a.dorse).length;
     const totalSurucu = araclar.filter((a) => a.surucu).length;
+
+    const effectiveView = canCardView ? view : "tablo";
+
+    if (!canViewPage) {
+        return (
+            <div className="ar-root">
+                <div className="ar-empty">
+                    <strong>Bu sayfayı görüntüleme yetkiniz yok</strong>
+                    <p>Erişim talep etmek için sistem yöneticinizle iletişime geçin.</p>
+                </div>
+            </div>
+        );
+    }
 
     const Pagination = () => (
         <div className="ar-pagination">
@@ -436,29 +510,35 @@ export default function Araclar() {
                 </div>
 
                 <div className="ar-topbar-right">
-                    <div className="ar-view-toggle">
-                        <button className={`ar-toggle-btn ${view === "kart" ? "ar-toggle-active" : ""}`} onClick={() => setView("kart")} type="button">
-                            <IconGrid /> Kart
-                        </button>
-                        <button className={`ar-toggle-btn ${view === "tablo" ? "ar-toggle-active" : ""}`} onClick={() => setView("tablo")} type="button">
-                            <IconList /> Tablo
-                        </button>
-                    </div>
+                    {canCardView && (
+                        <div className="ar-view-toggle">
+                            <button className={`ar-toggle-btn ${view === "kart" ? "ar-toggle-active" : ""}`} onClick={() => setView("kart")} type="button">
+                                <IconGrid /> Kart
+                            </button>
+                            <button className={`ar-toggle-btn ${view === "tablo" ? "ar-toggle-active" : ""}`} onClick={() => setView("tablo")} type="button">
+                                <IconList /> Tablo
+                            </button>
+                        </div>
+                    )}
 
-                    <button className="ar-btn ar-btn-excel" onClick={exportExcel} type="button">
-                        <IconDownload /> Excel
-                    </button>
+                    {canExportExcel && (
+                        <button className="ar-btn ar-btn-excel" onClick={exportExcel} type="button">
+                            <IconDownload /> Excel
+                        </button>
+                    )}
 
-                    <button
-                        className="ar-btn ar-btn-primary"
-                        onClick={() => {
-                            if (formOpen && editingId) resetForm();
-                            else setFormOpen((v) => !v);
-                        }}
-                        type="button"
-                    >
-                        {formOpen ? <><IconX /> Kapat</> : <><IconPlus /> Yeni Araç</>}
-                    </button>
+                    {canCreateVehicle && (
+                        <button
+                            className="ar-btn ar-btn-primary"
+                            onClick={() => {
+                                if (formOpen && editingId) resetForm();
+                                else setFormOpen((v) => !v);
+                            }}
+                            type="button"
+                        >
+                            {formOpen ? <><IconX /> Kapat</> : <><IconPlus /> Yeni Araç</>}
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -485,7 +565,7 @@ export default function Araclar() {
                 </div>
             </div>
 
-            {formOpen && (
+            {formOpen && (editingId ? canEditVehicle : canCreateVehicle) && (
                 <div className="ar-form-panel">
                     <form onSubmit={handleSubmit}>
                         <div className="ar-form-head">
@@ -573,7 +653,7 @@ export default function Araclar() {
 
             {!loading && <Pagination />}
 
-            {!loading && view === "kart" && (
+            {!loading && effectiveView === "kart" && (
                 <div className="ar-card-grid">
                     {pagedAraclar.map((item) => {
                         const avClass = avatarClass(item.surucu);
@@ -581,42 +661,56 @@ export default function Araclar() {
                             <article className="ar-card" key={item.id}>
                                 <div className="ar-card-header">
                                     <div className="ar-plates">
-                                        <PlateBadge plate={item.cekici} type="cekici" />
-                                        <PlateBadge plate={item.dorse} type="dorse" />
-                                        {!item.cekici && !item.dorse && <span className="ar-no-plate">Plaka yok</span>}
+                                        {canShowColumn(COLUMN_KEYS.cekici) && <PlateBadge plate={item.cekici} type="cekici" />}
+                                        {canShowColumn(COLUMN_KEYS.dorse) && <PlateBadge plate={item.dorse} type="dorse" />}
+                                        {canShowColumn(COLUMN_KEYS.cekici) && canShowColumn(COLUMN_KEYS.dorse) && !item.cekici && !item.dorse && <span className="ar-no-plate">Plaka yok</span>}
                                     </div>
 
-                                    <div className="ar-card-actions">
-                                        <button className="ar-edit-icon" onClick={() => startEdit(item)} type="button" title="Düzenle">
-                                            <IconEdit />
-                                        </button>
-                                        <button className="ar-delete-icon" onClick={() => deleteArac(item.id)} type="button" title="Sil">
-                                            <IconTrash />
-                                        </button>
-                                    </div>
+                                    {(canEditVehicle || canDeleteVehicle) && (
+                                        <div className="ar-card-actions">
+                                            {canEditVehicle && (
+                                                <button className="ar-edit-icon" onClick={() => startEdit(item)} type="button" title="Düzenle">
+                                                    <IconEdit />
+                                                </button>
+                                            )}
+                                            {canDeleteVehicle && (
+                                                <button className="ar-delete-icon" onClick={() => deleteArac(item.id)} type="button" title="Sil">
+                                                    <IconTrash />
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
-                                <div className="ar-card-driver">
-                                    <div className={`ar-avatar ${avClass}`}>{initials(item.surucu)}</div>
-                                    <div>
-                                        <p className="ar-driver-name">{item.surucu || "—"}</p>
-                                        <p className="ar-driver-tel">{item.telefon || "Telefon yok"}</p>
+                                {(canShowColumn(COLUMN_KEYS.surucu) || canShowColumn(COLUMN_KEYS.telefon)) && (
+                                    <div className="ar-card-driver">
+                                        {canShowColumn(COLUMN_KEYS.surucu) && <div className={`ar-avatar ${avClass}`}>{initials(item.surucu)}</div>}
+                                        <div>
+                                            {canShowColumn(COLUMN_KEYS.surucu) && <p className="ar-driver-name">{item.surucu || "—"}</p>}
+                                            {canShowColumn(COLUMN_KEYS.telefon) && <p className="ar-driver-tel">{item.telefon || "Telefon yok"}</p>}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 <div className="ar-card-info">
-                                    <div className="ar-info-item">
-                                        <span>TC</span>
-                                        <strong>{item.tc || "—"}</strong>
-                                    </div>
-                                    <div className="ar-info-item">
-                                        <span>VKN</span>
-                                        <strong>{getVknText(item) || "—"}</strong>
-                                    </div>
-                                    <div className="ar-info-item ar-info-full">
-                                        <span>Dataloger</span>
-                                        <strong>{item.datalogerNo || "—"}</strong>
-                                    </div>
+                                    {canShowColumn(COLUMN_KEYS.tc) && (
+                                        <div className="ar-info-item">
+                                            <span>TC</span>
+                                            <strong>{item.tc || "—"}</strong>
+                                        </div>
+                                    )}
+                                    {canShowColumn(COLUMN_KEYS.vkn) && (
+                                        <div className="ar-info-item">
+                                            <span>VKN</span>
+                                            <strong>{getVknText(item) || "—"}</strong>
+                                        </div>
+                                    )}
+                                    {canShowColumn(COLUMN_KEYS.datalogerNo) && (
+                                        <div className="ar-info-item ar-info-full">
+                                            <span>Dataloger</span>
+                                            <strong>{item.datalogerNo || "—"}</strong>
+                                        </div>
+                                    )}
                                 </div>
                             </article>
                         );
@@ -631,19 +725,15 @@ export default function Araclar() {
                 </div>
             )}
 
-            {!loading && view === "tablo" && (
+            {!loading && effectiveView === "tablo" && (
                 <div className="ar-table-wrap">
                     <table className="ar-table">
                         <thead>
                             <tr>
-                                <th>Sürücü</th>
-                                <th>Çekici</th>
-                                <th>Dorse</th>
-                                <th>TC</th>
-                                <th>Telefon</th>
-                                <th>VKN</th>
-                                <th>Dataloger</th>
-                                <th></th>
+                                {visibleTableColumns.map((column) => (
+                                    <th key={column.key}>{column.label}</th>
+                                ))}
+                                {(canEditVehicle || canDeleteVehicle) && <th></th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -651,28 +741,61 @@ export default function Araclar() {
                                 const avClass = avatarClass(item.surucu);
                                 return (
                                     <tr key={item.id} className="ar-table-row">
-                                        <td>
-                                            <div className="ar-table-driver">
-                                                <div className={`ar-avatar ar-avatar-sm ${avClass}`}>{initials(item.surucu)}</div>
-                                                <span>{item.surucu || "—"}</span>
-                                            </div>
-                                        </td>
-                                        <td>{item.cekici ? <span className="ar-tbl-plate ar-tbl-cekici">{item.cekici}</span> : <span className="ar-tbl-empty">—</span>}</td>
-                                        <td>{item.dorse ? <span className="ar-tbl-plate ar-tbl-dorse">{item.dorse}</span> : <span className="ar-tbl-empty">—</span>}</td>
-                                        <td className="ar-tbl-mono">{item.tc || <span className="ar-tbl-empty">—</span>}</td>
-                                        <td>{item.telefon || <span className="ar-tbl-empty">—</span>}</td>
-                                        <td className="ar-tbl-mono">{getVknText(item) || <span className="ar-tbl-empty">—</span>}</td>
-                                        <td className="ar-tbl-mono">{item.datalogerNo || <span className="ar-tbl-empty">—</span>}</td>
-                                        <td>
-                                            <div className="ar-table-actions">
-                                                <button className="ar-edit-icon" onClick={() => startEdit(item)} type="button" title="Düzenle">
-                                                    <IconEdit />
-                                                </button>
-                                                <button className="ar-delete-icon" onClick={() => deleteArac(item.id)} type="button" title="Sil">
-                                                    <IconTrash />
-                                                </button>
-                                            </div>
-                                        </td>
+                                        {visibleTableColumns.map((column) => {
+                                            if (column.key === "surucu") {
+                                                return (
+                                                    <td key={column.key}>
+                                                        <div className="ar-table-driver">
+                                                            <div className={`ar-avatar ar-avatar-sm ${avClass}`}>{initials(item.surucu)}</div>
+                                                            <span>{item.surucu || "—"}</span>
+                                                        </div>
+                                                    </td>
+                                                );
+                                            }
+
+                                            if (column.key === "cekici") {
+                                                return <td key={column.key}>{item.cekici ? <span className="ar-tbl-plate ar-tbl-cekici">{item.cekici}</span> : <span className="ar-tbl-empty">—</span>}</td>;
+                                            }
+
+                                            if (column.key === "dorse") {
+                                                return <td key={column.key}>{item.dorse ? <span className="ar-tbl-plate ar-tbl-dorse">{item.dorse}</span> : <span className="ar-tbl-empty">—</span>}</td>;
+                                            }
+
+                                            if (column.key === "tc") {
+                                                return <td key={column.key} className="ar-tbl-mono">{item.tc || <span className="ar-tbl-empty">—</span>}</td>;
+                                            }
+
+                                            if (column.key === "telefon") {
+                                                return <td key={column.key}>{item.telefon || <span className="ar-tbl-empty">—</span>}</td>;
+                                            }
+
+                                            if (column.key === "vkn") {
+                                                return <td key={column.key} className="ar-tbl-mono">{getVknText(item) || <span className="ar-tbl-empty">—</span>}</td>;
+                                            }
+
+                                            if (column.key === "datalogerNo") {
+                                                return <td key={column.key} className="ar-tbl-mono">{item.datalogerNo || <span className="ar-tbl-empty">—</span>}</td>;
+                                            }
+
+                                            return null;
+                                        })}
+
+                                        {(canEditVehicle || canDeleteVehicle) && (
+                                            <td>
+                                                <div className="ar-table-actions">
+                                                    {canEditVehicle && (
+                                                        <button className="ar-edit-icon" onClick={() => startEdit(item)} type="button" title="Düzenle">
+                                                            <IconEdit />
+                                                        </button>
+                                                    )}
+                                                    {canDeleteVehicle && (
+                                                        <button className="ar-delete-icon" onClick={() => deleteArac(item.id)} type="button" title="Sil">
+                                                            <IconTrash />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 );
                             })}

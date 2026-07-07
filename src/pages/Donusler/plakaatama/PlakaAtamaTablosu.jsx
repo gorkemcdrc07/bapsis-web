@@ -1,7 +1,7 @@
 export default function PlakaAtamaTablosu({
     loading,
-    visibleColumns,
-    filteredRows,
+    visibleColumns = [],
+    filteredRows = [],
     renderCell,
     openMapForRow,
 
@@ -14,6 +14,8 @@ export default function PlakaAtamaTablosu({
     onDropColumn,
     startResize,
 }) {
+    const hasMapPermission = typeof openMapForRow === "function";
+
     return (
         <div className="dpa-table-wrap premium">
             <table className="dpa-table premium-table">
@@ -63,21 +65,25 @@ export default function PlakaAtamaTablosu({
                                     return (
                                         <td key={column.key} className="dpa-action-col">
                                             <div className="dpa-row-actions">
-                                                <button
-                                                    type="button"
-                                                    className="dpa-map-btn modern-map"
-                                                    onClick={(event) => {
-                                                        event.stopPropagation();
-                                                        openMapForRow?.(row);
-                                                    }}
-                                                >
-                                                    <span className="dpa-map-dot">⌖</span>
-                                                    Harita
-                                                </button>
+                                                {hasMapPermission && (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            className="dpa-map-btn modern-map"
+                                                            onClick={(event) => {
+                                                                event.stopPropagation();
+                                                                openMapForRow(row);
+                                                            }}
+                                                        >
+                                                            <span className="dpa-map-dot">⌖</span>
+                                                            Harita
+                                                        </button>
 
-                                                <span className="dpa-action-divider" />
+                                                        <span className="dpa-action-divider" />
+                                                    </>
+                                                )}
 
-                                                {renderCell(row, rowIndex, column)}
+                                                {renderCell?.(row, rowIndex, column)}
                                             </div>
                                         </td>
                                     );
@@ -92,7 +98,7 @@ export default function PlakaAtamaTablosu({
                                             maxWidth: column.width,
                                         }}
                                     >
-                                        {renderCell(row, rowIndex, column)}
+                                        {renderCell?.(row, rowIndex, column)}
                                     </td>
                                 );
                             })}
@@ -101,7 +107,7 @@ export default function PlakaAtamaTablosu({
 
                     {!loading && filteredRows.length === 0 && (
                         <tr>
-                            <td className="dpa-empty modern-empty" colSpan={visibleColumns.length}>
+                            <td className="dpa-empty modern-empty" colSpan={visibleColumns.length || 1}>
                                 <div className="dpa-empty-card">
                                     <div className="dpa-empty-icon">□</div>
                                     <strong>Kayıt bulunamadı</strong>
@@ -113,7 +119,7 @@ export default function PlakaAtamaTablosu({
 
                     {loading && (
                         <tr>
-                            <td className="dpa-empty modern-empty" colSpan={visibleColumns.length}>
+                            <td className="dpa-empty modern-empty" colSpan={visibleColumns.length || 1}>
                                 <div className="dpa-loading-card">
                                     <div className="dpa-loader" />
                                     <strong>Yükleniyor...</strong>

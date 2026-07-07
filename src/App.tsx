@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useState } from "react";
 import {
     Navigate,
     Route,
@@ -6,7 +6,6 @@ import {
     useLocation,
     useNavigate,
 } from "react-router-dom";
-import { supabase } from "./lib/supabaseClient";
 
 import Login from "./pages/Login";
 import Layout from "./components/Layout/Layout";
@@ -30,6 +29,9 @@ import DonusNavlunlar from "./pages/Donusler/Navlunlar";
 import Vkn from "./pages/ekkayitlar/vkn";
 import UgramaSart from "./pages/ekkayitlar/ugramasart";
 import NavlunSart from "./pages/ekkayitlar/navlunsart";
+
+import { useAuth } from "./context/AuthContext";
+import { useSettings } from "./context/SettingsContext";
 
 const PAGE_KEYS: Record<string, string> = {
     anasayfa: "anasayfa",
@@ -69,27 +71,23 @@ const SCREEN_NAMES: Record<string, string> = {
     "/ekkayitlar/navlun": "Ek Kayıtlar / Navlun Şartı",
 };
 
+function AuthLoadingPage() {
+    return <div style={{ padding: 24 }}>Yetkiler yükleniyor...</div>;
+}
+
 function NoAccessPage() {
     const navigate = useNavigate();
     const location = useLocation();
-
-    let aktifKullanici: any = {};
-
-    try {
-        aktifKullanici = JSON.parse(localStorage.getItem("aktifKullanici") || "{}");
-    } catch {
-        aktifKullanici = {};
-    }
+    const { user } = useAuth();
 
     const ekranAdi = SCREEN_NAMES[location.pathname] || location.pathname;
 
     const kullaniciAdi =
-        aktifKullanici?.ad ||
-        aktifKullanici?.kullanici_adi ||
+        user?.ad ||
+        user?.kullanici_adi ||
         "Bilinmeyen kullanıcı";
 
-    const rol = aktifKullanici?.rol || "kullanici";
-
+    const rol = user?.rol || "kullanici";
     const tarih = new Date().toLocaleString("tr-TR");
 
     return (
@@ -175,95 +173,23 @@ function ProtectedPage({
     pageKey: string;
     children: JSX.Element;
 }) {
-    const [loading, setLoading] = useState(true);
-    const [allowed, setAllowed] = useState(false);
+    const { loading, user, canPage } = useAuth();
+    const { loadingSettings } = useSettings();
 
-    useEffect(() => {
-        async function checkPermission() {
-            try {
-                const aktifKullanici = JSON.parse(
-                    localStorage.getItem("aktifKullanici") || "null"
-                );
-
-                if (!aktifKullanici?.id) {
-                    setAllowed(false);
-                    setLoading(false);
-                    return;
-                }
-
-                const localRol = String(aktifKullanici?.rol || "")
-                    .trim()
-                    .toLowerCase();
-
-                if (localRol === "admin") {
-                    setAllowed(true);
-                    setLoading(false);
-                    return;
-                }
-
-                const { data: userData, error: userError } = await supabase
-                    .from("kullanicilar")
-                    .select("rol, yetki_override")
-                    .eq("id", aktifKullanici.id)
-                    .single();
-
-                if (userError || !userData) {
-                    setAllowed(false);
-                    setLoading(false);
-                    return;
-                }
-
-                const dbRol = String(userData.rol || "kullanici")
-                    .trim()
-                    .toLowerCase();
-
-                if (dbRol === "admin") {
-                    setAllowed(true);
-                    setLoading(false);
-                    return;
-                }
-
-                if (userData.yetki_override) {
-                    setAllowed(userData.yetki_override?.[pageKey]?.page === true);
-                    setLoading(false);
-                    return;
-                }
-
-                const { data: roleData, error: roleError } = await supabase
-                    .from("yetki_rolleri")
-                    .select("perms")
-                    .eq("role_key", dbRol)
-                    .single();
-
-                if (roleError || !roleData) {
-                    setAllowed(false);
-                    setLoading(false);
-                    return;
-                }
-
-                setAllowed(roleData.perms?.[pageKey]?.page === true);
-                setLoading(false);
-            } catch (err) {
-                console.error("Yetki kontrol hatası:", err);
-                setAllowed(false);
-                setLoading(false);
-            }
-        }
-
-        checkPermission();
-    }, [pageKey]);
-
-    if (loading) {
-        return <div style={{ padding: 24 }}>Yetkiler kontrol ediliyor...</div>;
+    if (loading || loadingSettings) {
+        return <AuthLoadingPage />;
     }
 
-    if (!allowed) {
+    if (!user) {
+        return <Navigate to="/login" replace />;
+    }
+
+    if (!canPage(pageKey)) {
         return <NoAccessPage />;
     }
 
     return children;
 }
-
 function App() {
     const [yetkiPanelAcik, setYetkiPanelAcik] = useState(false);
 
