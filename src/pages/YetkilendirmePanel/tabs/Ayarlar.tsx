@@ -94,6 +94,7 @@ export default function Ayarlar() {
             .from("aktif_oturumlar")
             .update({
                 aktif: false,
+                force_logout: true,
                 terminated_at: new Date().toISOString(),
                 terminated_by: "admin",
                 terminate_reason: "Admin tarafından sonlandırıldı.",
@@ -116,6 +117,8 @@ export default function Ayarlar() {
         await aktifOturumlariYukle();
     }
 
+
+
     if (loadingSettings) {
         return (
             <div className="settings-page">
@@ -126,6 +129,43 @@ export default function Ayarlar() {
             </div>
         );
     }
+
+    async function tumCihazlardanCikar(kullaniciId: string, kullaniciAdi?: string) {
+        const onay = window.confirm(
+            `${kullaniciAdi || "Bu kullanıcı"} tüm cihazlardan çıkarılsın mı?`
+        );
+
+        if (!onay) return;
+
+        const { error } = await supabase
+            .from("aktif_oturumlar")
+            .update({
+                aktif: false,
+                force_logout: true,
+                terminated_at: new Date().toISOString(),
+                terminated_by: "admin",
+                terminate_reason: "Admin tarafından tüm cihazlardan çıkarıldı.",
+            })
+            .eq("kullanici_id", String(kullaniciId))
+            .eq("aktif", true);
+
+        if (error) {
+            console.error("Tüm cihazlardan çıkarılamadı:", error);
+            alert("Tüm cihazlardan çıkarılırken hata oluştu.");
+            return;
+        }
+
+        await logKaydet({
+            seviye: "uyari",
+            kategori: "Oturum",
+            mesaj: "Admin kullanıcıyı tüm cihazlardan çıkardı",
+            detay: `${kullaniciAdi || "Bilinmeyen kullanıcı"} tüm cihazlardan çıkarıldı.`,
+        });
+
+        await aktifOturumlariYukle();
+    }
+
+
 
     return (
         <div className="settings-page">
@@ -368,19 +408,35 @@ export default function Ayarlar() {
 
                                                 <div className="session-actions">
                                                     {oturum.aktif ? (
-                                                        <button
-                                                            type="button"
-                                                            className="session-kill-modern"
-                                                            onClick={() =>
-                                                                oturumuSonlandir(
-                                                                    oturum.session_id,
-                                                                    oturum.ad || oturum.kullanici_adi
-                                                                )
-                                                            }
-                                                        >
-                                                            <i className="ti ti-logout" />
-                                                            Oturumu Sonlandır
-                                                        </button>
+                                                        <div className="session-action-stack">
+                                                            <button
+                                                                type="button"
+                                                                className="session-kill-modern"
+                                                                onClick={() =>
+                                                                    oturumuSonlandir(
+                                                                        oturum.session_id,
+                                                                        oturum.ad || oturum.kullanici_adi
+                                                                    )
+                                                                }
+                                                            >
+                                                                <i className="ti ti-logout" />
+                                                                Oturumu Sonlandır
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                className="session-kill-all-modern"
+                                                                onClick={() =>
+                                                                    tumCihazlardanCikar(
+                                                                        oturum.kullanici_id,
+                                                                        oturum.ad || oturum.kullanici_adi
+                                                                    )
+                                                                }
+                                                            >
+                                                                <i className="ti ti-devices-x" />
+                                                                Tüm Cihazlardan Çıkar
+                                                            </button>
+                                                        </div>
                                                     ) : (
                                                         <span className="session-ended-modern">
                                                             <i className="ti ti-circle-check" />

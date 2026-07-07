@@ -7,6 +7,7 @@ const AuthContext = createContext(null);
 
 const WARNING_MS = 60 * 1000;
 const SESSION_ID_KEY = "aktifSessionId";
+const SESSION_USER_KEY = "aktifSessionUserId";
 
 function getWarningMs(timeoutMs) {
     if (timeoutMs <= 60 * 1000) {
@@ -16,20 +17,21 @@ function getWarningMs(timeoutMs) {
     return WARNING_MS;
 }
 
-function getOrCreateSessionId() {
+function getOrCreateSessionId(userId) {
+    const storedUserId = localStorage.getItem(SESSION_USER_KEY);
     let sessionId = localStorage.getItem(SESSION_ID_KEY);
 
-    if (!sessionId) {
+    if (!sessionId || storedUserId !== String(userId)) {
         sessionId =
             crypto?.randomUUID?.() ||
             `session-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
         localStorage.setItem(SESSION_ID_KEY, sessionId);
+        localStorage.setItem(SESSION_USER_KEY, String(userId));
     }
 
     return sessionId;
 }
-
 function getClientInfo() {
     const ua = navigator.userAgent || "";
 
@@ -123,6 +125,7 @@ export function AuthProvider({ children }) {
                 localStorage.removeItem("aktifKullanici");
                 localStorage.removeItem("permissions");
                 localStorage.removeItem(SESSION_ID_KEY);
+                localStorage.removeItem(SESSION_USER_KEY);
                 setLoading(false);
                 return null;
             }
@@ -187,7 +190,7 @@ export function AuthProvider({ children }) {
     async function registerActiveSession(dbUser) {
         if (!dbUser?.id) return;
 
-        const sessionId = getOrCreateSessionId();
+        const sessionId = getOrCreateSessionId(dbUser.id);
         const clientInfo = getClientInfo();
 
         const { error } = await supabase
@@ -204,6 +207,7 @@ export function AuthProvider({ children }) {
                     platform: clientInfo.platform,
                     user_agent: clientInfo.user_agent,
                     aktif: true,
+                    force_logout: false,
                     son_islem_at: new Date().toISOString(),
                     terminated_at: null,
                     terminated_by: null,
@@ -250,6 +254,7 @@ export function AuthProvider({ children }) {
             .from("aktif_oturumlar")
             .update({
                 aktif: false,
+                force_logout: false,
                 terminated_at: new Date().toISOString(),
                 terminate_reason: reason,
             })
@@ -292,6 +297,7 @@ export function AuthProvider({ children }) {
         localStorage.removeItem("aktifKullanici");
         localStorage.removeItem("permissions");
         localStorage.removeItem(SESSION_ID_KEY);
+        localStorage.removeItem(SESSION_USER_KEY);
     }
 
     function extendSession() {

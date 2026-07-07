@@ -191,6 +191,8 @@ function Login() {
 
         localStorage.removeItem("aktifKullanici");
         localStorage.removeItem("permissions");
+        localStorage.removeItem("aktifSessionId");
+        localStorage.removeItem("aktifSessionUserId");
 
         const cleanUsername = username.trim();
         const cleanPassword = password.trim();
@@ -235,6 +237,9 @@ function Login() {
         }
 
         console.log("LOGIN USER:", data);
+
+        localStorage.removeItem("aktifSessionId");
+        localStorage.removeItem("aktifSessionUserId");
 
         localStorage.setItem("aktifKullanici", JSON.stringify(data));
         localStorage.removeItem("aktifSeferlerColumnView");
