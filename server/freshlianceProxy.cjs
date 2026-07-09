@@ -12,11 +12,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const path = require("path");
+
 const APP_ID = process.env.FRESHLIANCE_APP_ID;
+
 const PRIVATE_KEY_RAW = (
     process.env.FRESHLIANCE_PRIVATE_KEY ||
-    fs.readFileSync(require("path").join(__dirname, "freshliance_pkcs8.pem"), "utf8")
-).replace(/\\n/g, "\n");
+    fs.readFileSync(path.join(__dirname, "freshliance_pkcs8.pem"), "utf8")
+)
+    .replace(/\\n/g, "\n")
+    .replace(/\r/g, "")
+    .trim();
+
 const API_URL = "https://api.freshliance.com/api";
 
 const locationCache = new Map();
@@ -45,11 +52,45 @@ function buildSignText(params) {
         .join("&");
 }
 
+function getPrivateKeyForSign(rawKey) {
+    let key = String(rawKey)
+        .replace(/\\n/g, "\n")
+        .replace(/\r/g, "")
+        .trim();
+
+    if (key.includes("BEGIN")) {
+        return crypto.createPrivateKey({
+            key,
+            format: "pem",
+        });
+    }
+
+    key = key.replace(/\s+/g, "");
+
+    const der = Buffer.from(key, "base64");
+
+    try {
+        return crypto.createPrivateKey({
+            key: der,
+            format: "der",
+            type: "pkcs8",
+        });
+    } catch {
+        return crypto.createPrivateKey({
+            key: der,
+            format: "der",
+            type: "pkcs1",
+        });
+    }
+}
+
+const PRIVATE_KEY_OBJECT = getPrivateKeyForSign(PRIVATE_KEY_RAW);
+
 function createSign(params) {
     const signText = buildSignText(params);
 
     return crypto
-        .sign("RSA-SHA256", Buffer.from(signText), PRIVATE_KEY_RAW)
+        .sign("RSA-SHA256", Buffer.from(signText), PRIVATE_KEY_OBJECT)
         .toString("base64");
 }
 
