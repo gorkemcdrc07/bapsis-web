@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+const fs = require("fs");
 const https = require("https");
 const express = require("express");
 const axios = require("axios");
@@ -12,28 +13,25 @@ app.use(cors());
 app.use(express.json());
 
 const APP_ID = process.env.FRESHLIANCE_APP_ID;
-const PRIVATE_KEY_RAW = process.env.FRESHLIANCE_PRIVATE_KEY;
+const PRIVATE_KEY_RAW = fs.readFileSync("./freshliance_pkcs8.pem", "utf8");
+const API_URL = "https://api.freshliance.com/api";
+
+const locationCache = new Map();
+
+const liveDeviceCache = {
+    key: null,
+    data: null,
+    expiresAt: 0,
+};
+
+const LIVE_CACHE_MS = 60 * 1000;
 
 function getPrivateKeyObject(key) {
     if (!key) return null;
 
-    const base64Key = String(key)
-        .replace(/\\n/g, "\n")
-        .replace(/\r/g, "")
-        .replace("-----BEGIN PRIVATE KEY-----", "")
-        .replace("-----END PRIVATE KEY-----", "")
-        .replace("-----BEGIN RSA PRIVATE KEY-----", "")
-        .replace("-----END RSA PRIVATE KEY-----", "")
-        .replace(/["'`]/g, "")
-        .replace(/\s+/g, "")
-        .trim();
-
-    const der = Buffer.from(base64Key, "base64");
-
     return crypto.createPrivateKey({
-        key: der,
-        format: "der",
-        type: "pkcs1",
+        key,
+        format: "pem",
     });
 }
 
@@ -44,11 +42,8 @@ if (!APP_ID) {
 }
 
 if (!PRIVATE_KEY_OBJECT) {
-    throw new Error("FRESHLIANCE_PRIVATE_KEY environment variable tanýmlý deðil.");
+    throw new Error("FRESHLIANCE_PRIVATE_KEY okunamadý.");
 }
-
-const API_URL = "https://api.freshliance.com/api";
-const locationCache = new Map();
 
 function buildSignText(params) {
     return Object.keys(params)
@@ -93,29 +88,76 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function getLastHoursRange(hours = 24) {
-    const endTime = Date.now();
-    const beginTime = endTime - hours * 60 * 60 * 1000;
-    return { beginTime, endTime };
+function getDeviceCode(device) {
+    return String(
+        device.deviceCode ||
+        device.deviceNo ||
+        device.deviceSn ||
+        device.sn ||
+        device.imei ||
+        device.code ||
+        ""
+    ).trim();
 }
 
-async function getLatestProbeData(userDeviceTripId) {
-    if (!userDeviceTripId) return null;
+function getLocationCacheKey(latitude, longitude) {
+    return `${Number(latitude).toFixed(4)},${Number(longitude).toFixed(4)}`;
+}
 
-    const { beginTime, endTime } = getLastHoursRange(24);
+async function reverseGeocode(latitude, longitude) {
+    if (!latitude || !longitude) return null;
 
-    const result = await callFreshliance("tracker.tripData.pageProbeData", {
-        pageNum: 1,
-        pageSize: 10,
-        userDeviceTripId,
-        beginTime,
-        endTime,
-    });
+    const cacheKey = getLocationCacheKey(latitude, longitude);
 
-    if (result?.code !== "0") return null;
+    if (locationCache.has(cacheKey)) {
+        return locationCache.get(cacheKey);
+    }
 
-    const rows = result?.data?.rows || [];
-    return rows[0] || null;
+    try {
+        const response = await axios.get("https://nominatim.openstreetmap.org/reverse", {
+            params: {
+                format: "jsonv2",
+                lat: latitude,
+                lon: longitude,
+                zoom: 10,
+                addressdetails: 1,
+                "accept-language": "tr",
+            },
+            headers: {
+                "User-Agent": "bapsis-freshliance-proxy/1.0",
+            },
+            timeout: 10000,
+        });
+
+        const address = response.data?.address || {};
+
+        const city =
+            address.province ||
+            address.city ||
+            address.state ||
+            address.region ||
+            "";
+
+        const district =
+            address.town ||
+            address.city_district ||
+            address.county ||
+            address.district ||
+            address.village ||
+            "";
+
+        const value =
+            [city, district].filter(Boolean).join(" / ") ||
+            response.data?.display_name ||
+            `${latitude}, ${longitude}`;
+
+        locationCache.set(cacheKey, value);
+
+        return value;
+    } catch (error) {
+        console.log("LOCATION ERROR:", latitude, longitude, error.message);
+        return `${latitude}, ${longitude}`;
+    }
 }
 
 async function getAllDevices() {
@@ -143,10 +185,55 @@ async function getAllDevices() {
         allRows = [...allRows, ...rows];
 
         if (!rows.length || allRows.length >= total) break;
+
         pageNum += 1;
     }
 
     return { total, rows: allRows };
+}
+
+async function getLatestProbeData(userDeviceTripId, device) {
+    if (!userDeviceTripId) return null;
+
+    const endTime = Date.now();
+
+    const possibleBeginTimes = [
+        device?.bindTime,
+        device?.startTime,
+        device?.beginTime,
+        device?.tripStartTime,
+        endTime - 30 * 24 * 60 * 60 * 1000,
+    ].filter(Boolean);
+
+    for (const beginTime of possibleBeginTimes) {
+        for (const probeType of [0, 1]) {
+            try {
+                const result = await callFreshliance("tracker.tripData.pageProbeData", {
+                    pageNum: 1,
+                    pageSize: 10,
+                    userDeviceTripId,
+                    beginTime,
+                    endTime,
+                    probeType,
+                });
+
+                const rows = result?.data?.rows || [];
+
+                if (result?.code === "0" && rows.length) {
+                    return rows[0];
+                }
+            } catch (error) {
+                console.log(
+                    "PROBE ERROR:",
+                    userDeviceTripId,
+                    probeType,
+                    error.response?.data || error.message
+                );
+            }
+        }
+    }
+
+    return null;
 }
 
 function extractTemperature(probe) {
@@ -169,69 +256,20 @@ function extractHumidity(probe) {
     return probe.humidity ?? probe.hum ?? probe.humidityValue ?? null;
 }
 
-function getLocationCacheKey(latitude, longitude) {
-    return `${Number(latitude).toFixed(4)},${Number(longitude).toFixed(4)}`;
-}
-
-async function reverseGeocode(latitude, longitude) {
-    if (!latitude || !longitude) return null;
-
-    const cacheKey = getLocationCacheKey(latitude, longitude);
-
-    if (locationCache.has(cacheKey)) {
-        return locationCache.get(cacheKey);
-    }
-
-    try {
-        const response = await axios.get(
-            "https://nominatim.openstreetmap.org/reverse",
-            {
-                params: {
-                    format: "jsonv2",
-                    lat: latitude,
-                    lon: longitude,
-                    zoom: 10,
-                    addressdetails: 1,
-                    "accept-language": "tr",
-                },
-                headers: {
-                    "User-Agent": "bapsis-freshliance-proxy/1.0",
-                },
-                timeout: 10000,
-            }
-        );
-
-        const address = response.data?.address || {};
-
-        const city =
-            address.province ||
-            address.city ||
-            address.state ||
-            address.region ||
-            "";
-
-        const district =
-            address.town ||
-            address.city_district ||
-            address.county ||
-            address.district ||
-            address.village ||
-            "";
-
-        const locationText = [city, district].filter(Boolean).join(" / ");
-
-        const value =
-            locationText ||
-            response.data?.display_name ||
-            `${latitude}, ${longitude}`;
-
-        locationCache.set(cacheKey, value);
-
-        return value;
-    } catch (error) {
-        console.log("LOCATION ERROR:", latitude, longitude, error.message);
-        return `${latitude}, ${longitude}`;
-    }
+function createPayload(rows) {
+    return {
+        ok: true,
+        source: "freshliance",
+        cached: false,
+        result: {
+            code: "0",
+            msg: "success",
+            data: {
+                total: rows.length,
+                rows,
+            },
+        },
+    };
 }
 
 app.get("/freshliance/devices", async (req, res) => {
@@ -241,15 +279,28 @@ app.get("/freshliance/devices", async (req, res) => {
             .map((code) => code.trim())
             .filter(Boolean);
 
+        const cacheKey = requestedCodes.length
+            ? requestedCodes.sort().join(",")
+            : "ALL";
+
+        if (
+            liveDeviceCache.data &&
+            liveDeviceCache.key === cacheKey &&
+            liveDeviceCache.expiresAt > Date.now()
+        ) {
+            return res.json({
+                ...liveDeviceCache.data,
+                cached: true,
+            });
+        }
+
         const requestedCodeSet = new Set(requestedCodes);
 
         const deviceResult = await getAllDevices();
         const devices = deviceResult.rows || [];
 
         const targetDevices = requestedCodeSet.size
-            ? devices.filter((device) =>
-                requestedCodeSet.has(String(device.deviceCode || "").trim())
-            )
+            ? devices.filter((device) => requestedCodeSet.has(getDeviceCode(device)))
             : devices;
 
         const devicesWithExtra = [];
@@ -258,30 +309,19 @@ app.get("/freshliance/devices", async (req, res) => {
             let probe = null;
             let locationText = null;
 
-            if (requestedCodeSet.size && device.userDeviceTripId) {
-                try {
-                    probe = await getLatestProbeData(device.userDeviceTripId);
-                    await sleep(250);
-                } catch (error) {
-                    console.log(
-                        "PROBE ERROR:",
-                        device.deviceCode,
-                        device.userDeviceTripId,
-                        error.message
-                    );
-                }
+            if (device.userDeviceTripId) {
+                probe = await getLatestProbeData(device.userDeviceTripId, device);
+                await sleep(50);
             }
 
             if (device.latitude && device.longitude) {
-                locationText = await reverseGeocode(
-                    device.latitude,
-                    device.longitude
-                );
-                await sleep(250);
+                locationText = await reverseGeocode(device.latitude, device.longitude);
+                await sleep(50);
             }
 
             devicesWithExtra.push({
                 ...device,
+                deviceCode: getDeviceCode(device),
                 locationText,
                 probe_raw: probe,
                 temperature: extractTemperature(probe),
@@ -289,18 +329,13 @@ app.get("/freshliance/devices", async (req, res) => {
             });
         }
 
-        res.json({
-            ok: true,
-            source: "freshliance",
-            result: {
-                code: "0",
-                msg: "success",
-                data: {
-                    total: targetDevices.length,
-                    rows: devicesWithExtra,
-                },
-            },
-        });
+        const payload = createPayload(devicesWithExtra);
+
+        liveDeviceCache.key = cacheKey;
+        liveDeviceCache.data = payload;
+        liveDeviceCache.expiresAt = Date.now() + LIVE_CACHE_MS;
+
+        res.json(payload);
     } catch (error) {
         console.error("FRESHLIANCE ERROR:", error.message);
 
@@ -316,6 +351,11 @@ app.get("/health", (req, res) => {
     res.json({
         ok: true,
         message: "Freshliance proxy çalýþýyor",
+        cache: {
+            key: liveDeviceCache.key,
+            active: Boolean(liveDeviceCache.data && liveDeviceCache.expiresAt > Date.now()),
+            expiresAt: liveDeviceCache.expiresAt,
+        },
     });
 });
 
