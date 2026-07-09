@@ -13,7 +13,10 @@ app.use(cors());
 app.use(express.json());
 
 const APP_ID = process.env.FRESHLIANCE_APP_ID;
-const PRIVATE_KEY_RAW = fs.readFileSync("./freshliance_pkcs8.pem", "utf8");
+const PRIVATE_KEY_RAW = (
+    process.env.FRESHLIANCE_PRIVATE_KEY ||
+    fs.readFileSync(require("path").join(__dirname, "freshliance_pkcs8.pem"), "utf8")
+).replace(/\\n/g, "\n");
 const API_URL = "https://api.freshliance.com/api";
 
 const locationCache = new Map();
