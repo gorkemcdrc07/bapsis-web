@@ -29,24 +29,13 @@ const liveDeviceCache = {
 
 const LIVE_CACHE_MS = 60 * 1000;
 
-function getPrivateKeyObject(key) {
-    if (!key) return null;
 
-    return crypto.createPrivateKey({
-        key,
-        format: "pem",
-    });
-}
-
-const PRIVATE_KEY_OBJECT = getPrivateKeyObject(PRIVATE_KEY_RAW);
 
 if (!APP_ID) {
     throw new Error("FRESHLIANCE_APP_ID environment variable tanýmlý deðil.");
 }
 
-if (!PRIVATE_KEY_OBJECT) {
-    throw new Error("FRESHLIANCE_PRIVATE_KEY okunamadý.");
-}
+
 
 function buildSignText(params) {
     return Object.keys(params)
@@ -60,7 +49,7 @@ function createSign(params) {
     const signText = buildSignText(params);
 
     return crypto
-        .sign("RSA-SHA256", Buffer.from(signText), PRIVATE_KEY_OBJECT)
+        .sign("RSA-SHA256", Buffer.from(signText), PRIVATE_KEY_RAW)
         .toString("base64");
 }
 
